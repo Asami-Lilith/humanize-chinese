@@ -16,35 +16,55 @@ PATTERNS = {
         r'首先[，,].*其次[，,].*最后',
         r'一方面[，,].*另一方面',
         r'第一[，,].*第二[，,].*第三',
+        r'第一点.*第二点.*第三点',
     ],
     'mechanical_connectors': [
         '值得注意的是', '综上所述', '不难发现', '总而言之',
         '与此同时', '在此基础上', '由此可见', '此外',
+        '不仅如此', '换句话说', '更重要的是', '需要强调的是',
     ],
     'empty_grand_words': [
         '赋能', '闭环', '智慧时代', '数字化转型', '生态',
-        '愿景', '力量', '成就', '未来展望',
+        '愿景', '力量', '成就', '未来展望', '战略高度',
+        '顶层设计', '协同增效', '降本增效', '打通壁垒',
     ],
     
     # High signal patterns
     'ai_high_freq_words': [
         '助力', '彰显', '凸显', '焕发', '深度剖析',
-        '解构', '量子纠缠', '光谱', '加持',
+        '解构', '量子纠缠', '光谱', '加持', '赛道',
+        '破圈', '出圈', '内卷', '颠覆', '革新',
+        '创新驱动', '深度融合', '持续赋能', '全面升级',
     ],
     'technical_jargon': [
         '解构', '量子纠缠', '赛博', '光谱', '维度',
+        '范式', '路径', '矩阵', '框架', '模型',
     ],
     
     # Medium signal patterns
     'filler_phrases': [
         '值得一提的是', '需要指出的是', '不得不说',
         '毫无疑问', '显而易见', '众所周知',
+        '不言而喻', '如前所述', '正如我们所知',
     ],
     
     # Punctuation patterns
     'em_dash': '—',
     'semicolon': '；',
     'colon': '：',
+    'ellipsis': '……',
+    
+    # Emotion indicators (lack of emotion is AI signal)
+    'emotional_words': [
+        '愤怒', '高兴', '难过', '失望', '惊讶', '担心',
+        '开心', '郁闷', '焦虑', '兴奋', '害怕', '感动',
+    ],
+    
+    # Internet slang (overuse is AI signal when mismatched)
+    'internet_slang': [
+        'yyds', '绝绝子', '破防', 'emo', 'cpu',
+        '拿捏', '整活', '梗', '有梗', '无语',
+    ],
 }
 
 # Replacements for humanization
@@ -99,19 +119,23 @@ def detect_patterns(text):
         if count > 0:
             issues['filler_phrases'].append(f'{phrase} ({count}x)')
     
-    # Medium signal: Punctuation overuse
+    # Medium signal: Punctuation overuse and distribution
     em_dash_count = text.count(PATTERNS['em_dash'])
     semicolon_count = text.count(PATTERNS['semicolon'])
     colon_count = text.count(PATTERNS['colon'])
+    ellipsis_count = text.count(PATTERNS['ellipsis'])
     
     if char_count > 0:
         em_dash_density = em_dash_count / char_count * 100
         semicolon_density = semicolon_count / char_count * 100
+        ellipsis_density = ellipsis_count / char_count * 100
         
         if em_dash_density > 1.0:
             issues['punctuation_overuse'].append(f'破折号过多 ({em_dash_count})')
         if semicolon_density > 0.5:
             issues['punctuation_overuse'].append(f'分号过多 ({semicolon_count})')
+        if ellipsis_density > 1.5:
+            issues['punctuation_overuse'].append(f'省略号过多 ({ellipsis_count})')
     
     # Detect parallel structures (对偶句)
     parallel_pattern = r'[，,][^，,。！？]{4,10}[；;，,][^，,。！？]{4,10}[。！？]'
@@ -127,6 +151,39 @@ def detect_patterns(text):
         variance = sum((l - avg_len) ** 2 for l in lengths) / len(lengths)
         if variance < avg_len * 0.1:  # Low variance = uniform
             issues['uniform_paragraphs'].append(f'段落长度过于均匀')
+    
+    # NEW: Detect emotional flatness
+    emotional_count = sum(text.count(word) for word in PATTERNS['emotional_words'])
+    if char_count > 0:
+        emotional_density = emotional_count / char_count * 100
+        if emotional_density < 0.1 and char_count > 500:  # Very low emotion in long text
+            issues['emotional_flatness'].append(f'情感表达不足 (密度: {emotional_density:.2f}%)')
+    
+    # NEW: Detect vocabulary diversity (low = AI)
+    sentences = re.split(r'[。！？]', text)
+    if len(sentences) > 5:
+        avg_sentence_len = sum(len(s) for s in sentences) / len(sentences)
+        len_variance = sum((len(s) - avg_sentence_len) ** 2 for s in sentences) / len(sentences)
+        if len_variance < avg_sentence_len * 0.2:
+            issues['low_burstiness'].append(f'句子长度过于均匀 (低突发性)')
+    
+    # NEW: Detect repetitive sentence starters
+    sentence_starters = defaultdict(int)
+    for sent in sentences[:20]:  # Check first 20 sentences
+        sent = sent.strip()
+        if len(sent) > 3:
+            starter = sent[:2]
+            sentence_starters[starter] += 1
+    
+    max_repeat = max(sentence_starters.values()) if sentence_starters else 0
+    if max_repeat > 3:
+        issues['repetitive_structure'].append(f'句首重复过多 (最高{max_repeat}次)')
+    
+    # NEW: Check for internet slang overuse (context mismatch)
+    slang_count = sum(text.count(word) for word in PATTERNS['internet_slang'])
+    if slang_count > 5 and '学术' not in text and '论文' not in text:
+        # High slang in non-casual context
+        issues['slang_overuse'].append(f'网络用语过度 ({slang_count}次)')
     
     return issues, char_count
 
@@ -189,6 +246,10 @@ def format_output(issues, char_count, score, as_json=False, score_only=False):
         'excessive_rhetoric': '【高信号】过度修辞',
         'punctuation_overuse': '【中等】标点过度',
         'uniform_paragraphs': '【中等】段落均匀',
+        'emotional_flatness': '【风格】情感平淡',
+        'low_burstiness': '【风格】低突发性',
+        'repetitive_structure': '【中等】结构重复',
+        'slang_overuse': '【中等】网络用语过度',
     }
     
     for category, name in category_names.items():

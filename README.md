@@ -8,8 +8,9 @@ This ClawHub skill identifies "AI flavor" (AI 味) in Chinese text and rewrites 
 
 ## Features
 
-- **12 detection categories** specific to Chinese AI text
+- **16 detection categories** specific to Chinese AI text (NEW: emotional flatness, vocabulary diversity, slang overuse, etc.)
 - **Scene-specific humanization** (social media, tech blogs, formal articles, chat)
+- **6 style transforms** (casual, zhihu, xiaohongshu, wechat, academic, literary) — NEW in v1.1!
 - **Pure Python** — no dependencies required
 - **CLI-friendly** — supports files and stdin/stdout
 
@@ -25,6 +26,11 @@ python scripts/humanize_cn.py text.txt -o clean.txt
 # Scene-specific humanization
 python scripts/humanize_cn.py text.txt --scene social -o social.txt
 python scripts/humanize_cn.py text.txt --scene tech -o tech.txt
+
+# NEW: Apply specific writing styles
+python scripts/humanize_cn.py text.txt --style zhihu -o zhihu.txt
+python scripts/humanize_cn.py text.txt --style xiaohongshu -o xhs.txt
+python scripts/style_cn.py text.txt --style casual -o casual.txt
 
 # Compare before/after
 python scripts/compare_cn.py text.txt -o clean.txt
@@ -43,14 +49,17 @@ python scripts/compare_cn.py text.txt -o clean.txt
 - Excessive rhetoric (对偶句 >2x, 排比句 >1x)
 
 ### Medium Signal
-- Punctuation overuse (em dashes, semicolons)
+- Punctuation overuse (em dashes, semicolons, ellipses)
 - Obscure metaphors
 - Uniform paragraph lengths
+- Repetitive sentence structure (NEW)
+- Internet slang overuse (NEW)
 
 ### Style Signal
 - Low burstiness (monotonous sentence structure)
 - Low perplexity (predictable word choices)
-- Neutral tone (lack of emotion)
+- Emotional flatness (lack of emotion) — NEW
+- Vocabulary homogeneity (NEW)
 
 ## Scene Styles
 
@@ -60,6 +69,33 @@ python scripts/compare_cn.py text.txt -o clean.txt
 | `tech` | Professional but approachable | Tech blogs, documentation |
 | `formal` | Rigorous but natural | Reports, articles |
 | `chat` | Friendly, concise | Customer service, dialogue |
+
+## Writing Style Transforms (NEW in v1.1)
+
+Transform your text into different Chinese writing styles:
+
+| Style | Description | Best For |
+|-------|-------------|----------|
+| `casual` | 口语化风格 — Like chatting with friends | Social media, messaging |
+| `zhihu` | 知乎风格 — Rational, in-depth, personal opinion | Q&A platforms, thoughtful posts |
+| `xiaohongshu` | 小红书风格 — Enthusiastic, emoji-rich, product recommendations | Lifestyle sharing, product reviews |
+| `wechat` | 公众号风格 — Storytelling, engaging, relatable | WeChat articles, newsletters |
+| `academic` | 学术风格 — Rigorous but not stiff | Academic writing, research |
+| `literary` | 文艺风格 — Poetic, imagery-rich | Creative writing, essays |
+
+### Usage
+
+```bash
+# List all available styles
+python scripts/style_cn.py --list
+
+# Apply specific style
+python scripts/style_cn.py essay.txt --style zhihu -o essay_zhihu.txt
+python scripts/style_cn.py blog.txt --style xiaohongshu -o blog_xhs.txt
+
+# Combine with humanization
+python scripts/humanize_cn.py ai_text.txt --style casual -o natural.txt
+```
 
 ## Examples
 
@@ -113,6 +149,17 @@ Compare detection scores before and after.
 python scripts/compare_cn.py text.txt
 python scripts/compare_cn.py text.txt --scene tech -o clean.txt
 ```
+
+### style_cn.py (NEW)
+Transform text into specific writing styles.
+
+```bash
+python scripts/style_cn.py text.txt --style zhihu -o output.txt
+python scripts/style_cn.py text.txt --style xiaohongshu -o xhs.txt
+python scripts/style_cn.py --list  # Show all available styles
+```
+
+**Available styles:** casual, zhihu, xiaohongshu, wechat, academic, literary
 
 ## AI Probability Scoring
 

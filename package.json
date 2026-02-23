@@ -1,12 +1,13 @@
 {
   "name": "humanize-chinese",
-  "version": "1.0.0",
-  "description": "Detect and humanize AI-generated Chinese text. ClawHub skill for making AI writing natural and undetectable.",
+  "version": "1.1.0",
+  "description": "Detect and humanize AI-generated Chinese text with multiple style transforms. ClawHub skill for making AI writing natural and undetectable.",
   "main": "SKILL.md",
   "scripts": {
     "detect": "python scripts/detect_cn.py",
     "humanize": "python scripts/humanize_cn.py",
-    "compare": "python scripts/compare_cn.py"
+    "compare": "python scripts/compare_cn.py",
+    "style": "python scripts/style_cn.py"
   },
   "keywords": [
     "ai",

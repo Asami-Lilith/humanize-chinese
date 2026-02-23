@@ -185,6 +185,7 @@ def main():
     # Parse arguments
     output_file = None
     scene = 'general'
+    style = None
     aggressive = False
     
     i = 1
@@ -195,6 +196,9 @@ def main():
             i += 2
         elif arg == '--scene' and i + 1 < len(sys.argv):
             scene = sys.argv[i + 1]
+            i += 2
+        elif arg == '--style' and i + 1 < len(sys.argv):
+            style = sys.argv[i + 1]
             i += 2
         elif arg == '-a':
             aggressive = True
@@ -219,11 +223,44 @@ def main():
     # Humanize text
     result = humanize(text, scene, aggressive)
     
+    # Apply style if specified
+    if style:
+        # Import and apply style transformation
+        import os
+        import subprocess
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        style_script = os.path.join(script_dir, 'style_cn.py')
+        
+        if os.path.exists(style_script):
+            # Save intermediate result
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as tmp:
+                tmp.write(result)
+                tmp_path = tmp.name
+            
+            try:
+                # Apply style transformation
+                proc = subprocess.run(
+                    ['python3', style_script, tmp_path, '--style', style],
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8'
+                )
+                if proc.returncode == 0:
+                    result = proc.stdout
+                else:
+                    print(f'警告: 风格转换失败: {proc.stderr}', file=sys.stderr)
+            finally:
+                os.unlink(tmp_path)
+        else:
+            print(f'警告: 未找到风格转换脚本 {style_script}', file=sys.stderr)
+    
     # Output
     if output_file:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(result)
-        print(f'已保存到 {output_file}')
+        style_info = f' (风格: {style})' if style else ''
+        print(f'已保存到 {output_file}{style_info}')
     else:
         print(result)
 
