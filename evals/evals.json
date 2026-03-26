@@ -10,5 +10,13 @@
   {
     "prompt": "把这篇文章改成小红书风格",
     "expected_behavior": "Agent runs style_cn.py --style xiaohongshu or humanize_cn.py --style xiaohongshu, output has emoji, short paragraphs, enthusiastic tone, hashtags"
+  },
+  {
+    "prompt": "我的论文AIGC率太高了，帮我降一下",
+    "expected_behavior": "Agent runs academic_cn.py with --compare flag, shows before/after AIGC scores, outputs rewritten academic text maintaining scholarly tone"
+  },
+  {
+    "prompt": "detect if this Chinese text is AI-generated",
+    "expected_behavior": "Agent runs detect_cn.py with -v flag for verbose analysis, explains the scoring and detected patterns in English or Chinese based on user language"
   }
 ]

@@ -1,192 +1,288 @@
-# humanize-chinese
+# 🔧 中文 AI 文本去痕迹工具
 
-Detect and humanize AI-generated Chinese text. Makes robotic AI writing natural and undetectable.
+**免费、本地运行、零依赖的中文 AI 文本检测与改写工具。**
 
-[![ClawHub](https://img.shields.io/badge/clawhub-humanize--chinese-blue)](https://clawhub.com/skills/humanize-chinese)
+[![GitHub stars](https://img.shields.io/github/stars/voidborne-d/humanize-chinese?style=flat-square)](https://github.com/voidborne-d/humanize-chinese)
+[![ClawHub](https://img.shields.io/badge/clawhub-humanize--chinese-blue?style=flat-square)](https://clawhub.com/skills/humanize-chinese)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.6+-blue?style=flat-square)](https://python.org)
 
-## Features
+检测 20+ 种 AI 写作模式，量化评分 0-100，支持 7 种风格转换，学术论文 AIGC 降重专用模式。纯 Python，不需要安装任何依赖包。
 
-- **20+ detection categories** with weighted 0-100 scoring
-- **Sentence-level analysis** — find the most AI-like sentences
-- **Context-aware replacement** — regex patterns + plain text, longest-first
-- **Sentence restructuring** — merge short, split long, vary rhythm
-- **Vocabulary diversification** — reduce word repetition
-- **7 writing styles** — casual, zhihu, xiaohongshu, wechat, academic, literary, weibo
-- **🎓 Academic paper mode** — specialized AIGC detection & rewriting for Chinese academic papers (CNKI/VIP/Wanfang)
-- **External config** — all patterns in `patterns_cn.json`
-- **Pure Python** — no dependencies
+---
 
-## Install
+## Features at a Glance
+
+| 功能 | 说明 |
+|------|------|
+| 🔍 AI 检测 | 20+ 检测维度，加权 0-100 评分，精确到句子级 |
+| ✏️ 智能改写 | 上下文感知替换，句式重组，节奏变化 |
+| 🎓 学术降重 | 10 维度检测 + 120 条学术替换词库，针对知网/维普/万方 |
+| 🎨 风格转换 | 知乎、小红书、公众号、微博、学术、文艺、口语 7 种 |
+| 📊 前后对比 | 一键对比改写前后评分变化 |
+| 🔄 可复现 | `--seed` 参数保证相同输入输出一致 |
+| 📦 零依赖 | 纯 Python 标准库，下载即用 |
+
+---
+
+## Comparison / 对比
+
+和目前最流行的中文去 AI 工具 [Humanizer-zh](https://github.com/op7418/Humanizer-zh) 的对比：
+
+| 对比项 | humanize-chinese（本项目） | Humanizer-zh |
+|--------|--------------------------|--------------|
+| 运行方式 | ✅ 独立 CLI 工具，终端直接跑 | ❌ 纯 Skill prompt，必须在 Claude Code 内用 |
+| 依赖 | ✅ 零依赖（纯 Python 标准库） | 需要 Claude Code 环境 |
+| 量化评分 | ✅ 0-100 分，4 级评估 | ❌ 无评分，靠感觉判断 |
+| 句子级分析 | ✅ 定位最可疑的句子 | ❌ 只做整体改写 |
+| 学术论文模式 | ✅ 专用 10 维度检测 + 120 条替换 | ❌ 无学术专用功能 |
+| 风格转换 | ✅ 7 种中文写作风格 | ❌ 无 |
+| 结果可复现 | ✅ `--seed` 固定随机数 | ❌ 每次结果不同 |
+| 批量处理 | ✅ CLI 管道，脚本化 | ❌ 只能单篇交互 |
+| 模式配置 | ✅ JSON 外部配置，可自定义 | ❌ 硬编码在 prompt 里 |
+| 免费 | ✅ 完全免费 | ⚠️ 需要 Claude API 额度 |
+| 也可作为 Skill | ✅ 支持 OpenClaw / Claude Code | ✅ 支持 Claude Code |
+
+简单说：Humanizer-zh 是个很好的 prompt，但它只能在 Claude Code 里用，没法量化效果，也没有学术论文专用功能。我们这个是独立工具，可以在任何环境里跑，有评分有对比，学术场景也覆盖了。
+
+---
+
+## Install / 安装
+
+**方式一：ClawHub（推荐）**
 
 ```bash
 clawhub install humanize-chinese
 ```
 
-Or clone:
+**方式二：Git Clone**
 
 ```bash
 git clone https://github.com/voidborne-d/humanize-chinese.git
+cd humanize-chinese
 ```
+
+**方式三：Claude Code Skill**
+
+```bash
+# 通过 npx 安装
+npx skills add https://github.com/voidborne-d/humanize-chinese.git
+```
+
+**方式四：手动下载**
+
+直接下载 `scripts/` 目录下的 Python 文件和 `patterns_cn.json`，放到同一个目录就能用。
+
+---
 
 ## Quick Start
 
-```bash
-# Detect AI patterns
-python scripts/detect_cn.py text.txt
-python scripts/detect_cn.py text.txt -v    # verbose with worst sentences
-python scripts/detect_cn.py text.txt -s    # score only: "72/100 (high)"
-
-# Humanize
-python scripts/humanize_cn.py text.txt -o clean.txt
-python scripts/humanize_cn.py text.txt --scene tech -a   # aggressive mode
-
-# Style transform
-python scripts/style_cn.py text.txt --style xiaohongshu
-
-# Compare before/after
-python scripts/compare_cn.py text.txt --scene tech -a
-
-# 🎓 Academic paper AIGC reduction
-python scripts/academic_cn.py paper.txt                    # detect + rewrite
-python scripts/academic_cn.py paper.txt --detect-only      # detect only
-python scripts/academic_cn.py paper.txt -o clean.txt       # rewrite and save
-python scripts/academic_cn.py paper.txt -o clean.txt -a    # aggressive mode
-python scripts/academic_cn.py paper.txt -o clean.txt --compare  # show before/after
-```
-
-## Scoring
-
-| Score | Level | Meaning |
-|-------|-------|---------|
-| 0-24  | LOW | Likely human-written |
-| 25-49 | MEDIUM | Some AI signals |
-| 50-74 | HIGH | Probably AI-generated |
-| 75-100 | VERY HIGH | Almost certainly AI |
-
-## Detection Example
-
-```
-AI 评分: 100/100 [████████████████████] VERY HIGH
-字符: 381 | 句子: 14 | 段落: 5
-信息熵: 8.29 | 情感密度: 0.00%
-问题总数: 25
-
-🔴 三段式套路 (2)
-   首先，值得注意的是...其次...最后
-🔴 机械连接词 (9)
-   值得注意的是, 综上所述, 总而言之...
-🔴 空洞宏大词 (8)
-   赋能, 闭环, 数字化转型...
-🟠 AI 高频词 (3)
-   助力, 彰显, 颠覆
-🟠 模板句式 (2)
-   随着...的不断发展, 在当今...时代
-```
-
-## Humanization Result
-
-```
-═══ 对比结果 ═══
-原文:   100/100 [████████████████████] VERY_HIGH
-改写后:  25/100 [█████░░░░░░░░░░░░░░░] MEDIUM
-✅ 降低了 75 分
-```
-
-## Writing Styles
-
-| Style | Name | Best For |
-|-------|------|----------|
-| `casual` | 口语化 | Social media, messaging |
-| `zhihu` | 知乎 | Q&A, analysis |
-| `xiaohongshu` | 小红书 | Reviews, lifestyle |
-| `wechat` | 公众号 | Newsletters, articles |
-| `academic` | 学术 | Papers, reports |
-| `literary` | 文艺 | Creative writing |
-| `weibo` | 微博 | Short posts |
-
----
-
-## 🎓 学术论文 AIGC 降重工具
-
-**专门针对中文学术论文场景**，帮助降低知网（CNKI）、维普（VIP）、万方等平台的 AIGC 检测率。
-
-### 功能特点
-
-- **10 个检测维度**：AI 学术措辞、被动句式、段落结构、连接词密度、同义匮乏、引用整合、数据论述、过度列举、结论圆满度、语气确定性
-- **120+ 条学术替换词库**：将模板化学术表达替换为更自然的学术写法
-- **保持学术严谨性**：改写不会降格为口语，保留论文该有的严谨与规范
-- **学术犹豫语注入**（hedging language）：增加"可能""在一定程度上"等学术留白
-- **作者主体性增强**：将"研究表明"替换为"笔者认为""本研究发现"
-- **结论局限性补充**：检测并补充缺失的局限性讨论
-
-### 使用方法
+### 场景一：通用文本去 AI 味
 
 ```bash
-# 检测学术论文 AI 痕迹
+# 先检测，看看 AI 味有多重
+python scripts/detect_cn.py text.txt -v
+
+# 改写 + 对比
+python scripts/compare_cn.py text.txt -a -o clean.txt
+
+# 验证效果
+python scripts/detect_cn.py clean.txt -s
+```
+
+### 场景二：学术论文 AIGC 降重
+
+```bash
+# 检测学术 AI 痕迹
 python scripts/academic_cn.py paper.txt
 
-# 改写并输出
-python scripts/academic_cn.py paper.txt -o clean_paper.txt
-
-# 仅检测，不改写
-python scripts/academic_cn.py paper.txt --detect-only
-
-# 激进模式（改写更多）
-python scripts/academic_cn.py paper.txt -o clean.txt --aggressive
-
-# 对比模式（显示改写前后评分变化）
+# 改写并对比（推荐）
 python scripts/academic_cn.py paper.txt -o clean.txt --compare
+
+# 激进模式（降得更狠）
+python scripts/academic_cn.py paper.txt -o clean.txt -a --compare
 ```
 
-### 检测维度说明
+### 场景三：风格转换
 
-| 维度 | 说明 | 示例 |
-|------|------|------|
-| 🔴 AI 学术措辞 | AI 生成的典型学术套话 | "本文旨在""具有重要意义""进行了深入分析" |
-| 🟠 被动句式过度 | 过多使用被动表达 | "被广泛应用""被认为是""被视为" |
-| 🟠 段落结构整齐 | 每段长度、结构过于一致 | 每段都是"总述+3 分论点+小结" |
-| 🟠 连接词密集 | 逻辑连接词使用频率异常 | "此外""综上所述""值得注意的是" |
-| 🟡 同义表达匮乏 | 同一词汇反复出现 | "研究"出现 8 次 |
-| 🟡 引用整合度低 | 引用方式机械化 | 每个引用都是"XX（2020）指出..." |
-| 🟡 数据论述模板化 | 描述数据的方式单一 | "从表中可以看出""数据显示" |
-| 🟡 过度列举 | 频繁使用编号列举 | 动辄①②③④ |
-| 🟠 结论过于圆满 | 缺少局限性讨论 | 只说"成效显著"不说不足 |
-| 🟠 语气过于确定 | 缺少学术犹豫表达 | "必然""毫无疑问""势必" |
+```bash
+# 转小红书风格
+python scripts/style_cn.py text.txt --style xiaohongshu
 
-### 改写前后对比
+# 转知乎风格
+python scripts/style_cn.py text.txt --style zhihu -o zhihu.txt
 
-**改写前**（AIGC 评分: 100/100 VERY HIGH）：
-> 随着社会的不断发展，人工智能技术在教育领域的应用引起了广泛关注。本文旨在探讨人工智能对高等教育教学模式的影响，具有重要的理论意义和实践价值。研究表明，人工智能技术已被广泛应用于课堂教学、学生评估和个性化学习等多个方面，发挥着重要作用。
-
-**改写后**（AIGC 评分: 26/100 MEDIUM，降低 74 分）：
-> 近年来社会变迁加速，人工智能技术在教育领域的应用逐渐进入研究者的视野。本文尝试探讨人工智能对高等教育教学模式的影响，兼具理论探索与实践参考的双重价值。前人研究发现，人工智能技术已广泛用于课堂教学、学生评估和个性化学习等多个方面，扮演着不可或缺的角色。
-
-### 关于知网/维普 AIGC 检测
-
-知网 AMLC（学术不端文献检测系统）和维普 AIGC 检测系统主要通过以下特征识别 AI 生成文本：
-
-1. **词汇层面**：AI 倾向于使用模板化的学术表达，如"具有重要意义""进行了深入分析"
-2. **句法层面**：被动句式过多、逻辑连接词密度异常高
-3. **结构层面**：段落长度高度一致、"总-分-总"结构机械重复
-4. **语义层面**：语气过于确定、缺少学术犹豫语、结论过于完美
-5. **统计层面**：低信息熵、同义词使用匮乏、句长变异系数低
-
-本工具的检测维度覆盖了以上所有层面，改写策略也针对性地处理每个特征。
-
-### 注意事项
-
-⚠️ 本工具仅做文本层面的风格调整，**不改变论文的学术内容和论证逻辑**。建议改写后仔细通读全文，确保：
-- 论述逻辑未被打乱
-- 专业术语未被误改
-- 引用格式保持正确
-- 整体可读性符合要求
+# 先去 AI 味再转风格
+python scripts/humanize_cn.py text.txt --style xiaohongshu -o xhs.txt
+```
 
 ---
 
-## Customization
+## Examples / 改写效果展示
 
-Edit `scripts/patterns_cn.json` to add/modify detection patterns, replacement alternatives, and scoring weights. The `academic_patterns` section contains all academic-specific patterns and replacements.
+### 通用文本
+
+**改写前**（AI 评分：87/100 VERY HIGH）：
+
+> 综上所述，人工智能技术在教育领域具有重要的应用价值和广阔的发展前景。值得注意的是，随着技术的不断发展，AI 将在个性化学习、智能评估等方面发挥越来越重要的作用，为教育行业的数字化转型赋能。
+
+**改写后**（AI 评分：12/100 LOW）：
+
+> 从目前的实践来看，AI 辅助教学在个性化推荐方面效果比较明显，但在情感交互层面仍有不少局限。技术落地不是一蹴而就的事，教育场景的复杂性远超一般的商业应用。
+
+### 学术论文
+
+**改写前**（AIGC 评分：100/100 VERY HIGH）：
+
+> 随着社会的不断发展，人工智能技术在教育领域的应用引起了广泛关注。本文旨在探讨人工智能对高等教育教学模式的影响，具有重要的理论意义和实践价值。研究表明，人工智能技术已被广泛应用于课堂教学、学生评估和个性化学习等多个方面，发挥着重要作用。
+
+**改写后**（AIGC 评分：26/100 MEDIUM，降低 74 分）：
+
+> 近年来社会变迁加速，人工智能技术在教育领域的应用逐渐进入研究者的视野。本文尝试探讨人工智能对高等教育教学模式的影响，兼具理论探索与实践参考的双重价值。前人研究发现，人工智能技术已广泛用于课堂教学、学生评估和个性化学习等多个方面，扮演着不可或缺的角色。
+
+### 社交媒体
+
+**改写前**（AI 评分：72/100 HIGH）：
+
+> 在当今快节奏的生活中，时间管理具有至关重要的意义。通过合理规划时间，不仅能够提升工作效率，更能实现工作与生活的平衡。值得一提的是，良好的时间管理习惯需要长期培养和不断优化。
+
+**改写后**（小红书风格，AI 评分：8/100 LOW）：
+
+> 姐妹们！说真的，时间管理这事我踩过太多坑了 😭 之前天天加班到半夜，后来摸索出一套方法，现在居然能准点下班了？！重点就是别给自己排太满，留点缓冲时间。这个习惯我养了大概三个月才稳定下来，急不来的～
+
+---
+
+## Scoring / 评分标准
+
+| 分数 | 等级 | 含义 |
+|------|------|------|
+| 0-24 | 🟢 LOW | 基本像人写的 |
+| 25-49 | 🟡 MEDIUM | 有些 AI 痕迹 |
+| 50-74 | 🟠 HIGH | 大概率是 AI 生成 |
+| 75-100 | 🔴 VERY HIGH | 几乎可以确定是 AI |
+
+### 检测维度
+
+**🔴 高权重（容易暴露）：** 三段式套路（首先/其次/最后）、机械连接词（综上所述/值得注意的是）、空洞宏大词（赋能/闭环/数字化转型）
+
+**🟠 中权重：** AI 高频词（助力/彰显/底层逻辑）、填充短语、平衡论述模板、套话句式
+
+**🟡 低权重：** 犹豫语过多、列举成瘾、标点滥用、修辞堆砌
+
+**⚪ 风格信号：** 段落长度均匀、句长单调、情感平淡、开头重复、信息熵低
+
+---
+
+## 🎓 学生党必看：免费降 AIGC 率
+
+用 ChatGPT 写了论文初稿，担心知网/维普查出来？这个工具就是干这个的。
+
+### 三步走
+
+```bash
+# 1. 先看看你的论文 AIGC 率多高
+python scripts/academic_cn.py 论文.txt
+
+# 2. 一键改写
+python scripts/academic_cn.py 论文.txt -o 改后.txt --compare
+
+# 3. 不放心就开激进模式
+python scripts/academic_cn.py 论文.txt -o 改后.txt -a --compare
+```
+
+### 这工具干了啥
+
+- 把"本文旨在""具有重要意义"这种 AI 套话换成正常的学术表达
+- 减少被动句（"被广泛应用"→"得到较多运用"）
+- 打破每段都一样长的结构
+- 加入学术犹豫语（"可能""在一定程度上"），让语气没那么绝对
+- 把"研究表明"换成"笔者认为""前人研究发现"，增加作者存在感
+- 给结论补上局限性讨论
+
+### 注意
+
+⚠️ 工具只做文本风格调整，**不会改变你的论证逻辑和学术内容**。改完以后通读一遍，确认：
+- 专业术语没被误改
+- 论述逻辑没打乱
+- 引用格式还对着
+- 读起来通顺
+
+建议改完以后自己用知网 AMLC 或维普跑一遍，确认效果。
+
+---
+
+## Writing Styles / 风格转换
+
+| 风格 | 命令 | 适合场景 |
+|------|------|----------|
+| 口语化 | `--style casual` | 聊天、朋友圈 |
+| 知乎 | `--style zhihu` | 深度回答、分析 |
+| 小红书 | `--style xiaohongshu` | 种草、测评、生活分享 |
+| 公众号 | `--style wechat` | 推文、专栏 |
+| 学术 | `--style academic` | 论文、报告 |
+| 文艺 | `--style literary` | 散文、随笔 |
+| 微博 | `--style weibo` | 短评、热点 |
+
+---
+
+## CLI Reference
+
+```bash
+# 检测
+python scripts/detect_cn.py [file] [-v] [-s] [-j] [--sentences N]
+
+# 改写
+python scripts/humanize_cn.py [file] [-o out] [--scene S] [--style S] [-a] [--seed N]
+
+# 风格转换
+python scripts/style_cn.py [file] --style S [-o out] [--seed N] [--list]
+
+# 学术降重
+python scripts/academic_cn.py [file] [-o out] [--detect-only] [-a] [--compare] [-j] [-s] [-v]
+
+# 对比
+python scripts/compare_cn.py [file] [-o out] [--scene S] [--style S] [-a]
+```
+
+### 常用参数
+
+| 参数 | 说明 |
+|------|------|
+| `-v` | 详细模式，显示最可疑的句子 |
+| `-s` | 只输出评分（如 `72/100 (high)`） |
+| `-j` | JSON 格式输出 |
+| `-o` | 输出文件路径 |
+| `-a` | 激进模式，改写力度更大 |
+| `--seed N` | 固定随机种子，保证结果可复现 |
+| `--scene` | 场景：general / social / tech / formal / chat |
+| `--style` | 风格：casual / zhihu / xiaohongshu / wechat / academic / literary / weibo |
+| `--compare` | 显示改写前后对比 |
+
+---
+
+## Customization / 自定义
+
+所有检测模式、替换词库、权重配置都在 `scripts/patterns_cn.json` 里，可以自己改：
+
+- 加新的 AI 词汇模式
+- 调整评分权重
+- 添加替换规则
+- 修改正则匹配模式
+
+---
+
+## Batch Processing / 批量处理
+
+```bash
+# 批量检测
+for f in *.txt; do echo "=== $f ===" && python scripts/detect_cn.py "$f" -s; done
+
+# 批量改写
+for f in *.md; do python scripts/humanize_cn.py "$f" -a -o "${f%.md}_clean.md"; done
+```
+
+---
 
 ## License
 
-MIT
+MIT — 随便用，不用付钱，不用署名。
