@@ -13,6 +13,15 @@ import argparse
 from collections import defaultdict
 from math import log2
 
+# Import n-gram statistical model
+try:
+    from ngram_model import analyze_text as ngram_analyze
+except ImportError:
+    try:
+        from scripts.ngram_model import analyze_text as ngram_analyze
+    except ImportError:
+        ngram_analyze = None
+
 # Load patterns from JSON config
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PATTERNS_FILE = os.path.join(SCRIPT_DIR, 'patterns_cn.json')
@@ -322,6 +331,33 @@ def detect_patterns(text):
             'severity': 'style',
         })
     
+    # ── Statistical: N-gram perplexity features ──
+    ngram_stats = None
+    if ngram_analyze and char_count >= 100:
+        ngram_stats = ngram_analyze(text)
+        indicators = ngram_stats.get('indicators', {})
+        
+        if indicators.get('low_perplexity'):
+            ppl = ngram_stats['perplexity']
+            issues['stat_low_perplexity'].append({
+                'text': f'文本困惑度 {ppl:.1f}（AI 文本通常在此范围内）',
+                'severity': 'statistical',
+            })
+        
+        if indicators.get('low_burstiness'):
+            burst = ngram_stats['burstiness']
+            issues['stat_low_burstiness'].append({
+                'text': f'困惑度变异系数 {burst:.3f}（过于均匀，缺少人类写作的起伏）',
+                'severity': 'statistical',
+            })
+        
+        if indicators.get('uniform_entropy'):
+            ent_cv = ngram_stats['entropy_cv']
+            issues['stat_uniform_entropy'].append({
+                'text': f'段落熵变异系数 {ent_cv:.3f}（段落间复杂度过于一致）',
+                'severity': 'statistical',
+            })
+    
     # ── Compute metrics ──
     metrics = {
         'char_count': char_count,
@@ -330,6 +366,12 @@ def detect_patterns(text):
         'entropy': entropy if char_count > 200 else None,
         'emotional_density': (emotional_count + personal_count) / char_count * 100 if char_count > 0 else 0,
     }
+    
+    # Add statistical metrics if available
+    if ngram_stats:
+        metrics['perplexity'] = ngram_stats['perplexity']
+        metrics['burstiness'] = ngram_stats['burstiness']
+        metrics['entropy_cv'] = ngram_stats['entropy_cv']
     
     return issues, metrics
 
@@ -340,16 +382,31 @@ SEVERITY_WEIGHTS = {
     'high': 4,
     'medium': 2,
     'style': 1.5,
+    'statistical': 0,  # statistical features scored separately below
+}
+
+# Statistical feature weights (scored independently, contribute 20-30% of final score)
+STATISTICAL_WEIGHTS = {
+    'stat_low_perplexity': 12,
+    'stat_low_burstiness': 10,
+    'stat_uniform_entropy': 8,
 }
 
 def calculate_score(issues, metrics):
     """
     Calculate AI probability score (0-100).
     Higher = more likely AI-generated.
+    
+    Scoring composition:
+      - Rule-based patterns: ~70-80% weight
+      - Statistical features (perplexity/burstiness/entropy): ~20-30% weight
     """
     raw = 0
     
     for category, items in issues.items():
+        # Skip statistical items — scored separately
+        if category.startswith('stat_'):
+            continue
         for item in items:
             severity = item.get('severity', 'medium')
             weight = SEVERITY_WEIGHTS.get(severity, 2)
@@ -357,9 +414,17 @@ def calculate_score(issues, metrics):
             # Diminishing returns for repeated items
             raw += weight * min(count, 5)
     
-    # Normalize: cap at 100
-    # Typical AI text scores 40-80 raw, human text 0-15
-    score = min(100, int(raw * 1.2))
+    # Rule-based score (cap contribution at ~75 points)
+    rule_score = min(75, int(raw * 1.0))
+    
+    # Statistical score (up to 25 points)
+    stat_score = 0
+    for category, items in issues.items():
+        if category.startswith('stat_') and items:
+            stat_score += STATISTICAL_WEIGHTS.get(category, 5)
+    stat_score = min(25, stat_score)
+    
+    score = rule_score + stat_score
     
     # Bonus penalties
     if metrics.get('emotional_density', 1) < 0.1 and metrics['char_count'] > 500:
@@ -368,7 +433,7 @@ def calculate_score(issues, metrics):
     if metrics.get('entropy') and metrics['entropy'] < 5.5:
         score = min(100, score + 5)
     
-    return score
+    return min(100, score)
 
 def score_to_level(score):
     """Convert numeric score to level"""
@@ -442,6 +507,10 @@ CATEGORY_NAMES = {
     'emotional_flatness': ('⚪', '情感平淡'),
     'repetitive_starters': ('⚪', '句首重复'),
     'low_entropy': ('⚪', '低信息熵'),
+    # Statistical features (n-gram perplexity)
+    'stat_low_perplexity': ('📊', '困惑度异常低'),
+    'stat_low_burstiness': ('📊', '困惑度变化均匀'),
+    'stat_uniform_entropy': ('📊', '段落熵值均匀'),
 }
 
 def format_output(issues, metrics, score, sentences=None, as_json=False, score_only=False, verbose=False):
@@ -482,10 +551,16 @@ def format_output(issues, metrics, score, sentences=None, as_json=False, score_o
     lines.append(f'问题总数: {total_issues}')
     lines.append('')
     
+    # Statistical metrics line
+    if metrics.get('perplexity'):
+        lines.append(f'困惑度: {metrics["perplexity"]:.1f} | 突发度: {metrics.get("burstiness", 0):.3f} | 段落熵CV: {metrics.get("entropy_cv", 0):.3f}')
+        lines.append('')
+    
     # Issues by severity
     for cat in ['three_part_structure', 'mechanical_connectors', 'empty_grand_words',
                 'ai_high_freq_words', 'filler_phrases', 'balanced_arguments', 'template_sentences',
                 'hedging_language', 'list_addiction', 'punctuation_overuse', 'excessive_rhetoric',
+                'stat_low_perplexity', 'stat_low_burstiness', 'stat_uniform_entropy',
                 'uniform_paragraphs', 'low_burstiness', 'emotional_flatness', 'repetitive_starters', 'low_entropy']:
         if cat not in issues or not issues[cat]:
             continue

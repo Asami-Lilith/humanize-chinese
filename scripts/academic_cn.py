@@ -15,6 +15,15 @@ import argparse
 from collections import defaultdict
 from math import log2
 
+# Import n-gram statistical model
+try:
+    from ngram_model import analyze_text as ngram_analyze
+except ImportError:
+    try:
+        from scripts.ngram_model import analyze_text as ngram_analyze
+    except ImportError:
+        ngram_analyze = None
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PATTERNS_FILE = os.path.join(SCRIPT_DIR, 'patterns_cn.json')
 
@@ -189,6 +198,17 @@ DIMENSION_WEIGHTS = {
     'over_enumeration':      5,   # 过度列举
     'perfect_conclusion':    6,   # 结论过于圆满
     'certainty_overuse':     7,   # 语气过于确定
+    # Statistical dimensions (n-gram perplexity)
+    'stat_low_perplexity':   0,   # scored separately
+    'stat_low_burstiness':   0,   # scored separately
+    'stat_uniform_entropy':  0,   # scored separately
+}
+
+# Statistical feature weights (contribute up to ~25% of final score)
+STATISTICAL_WEIGHTS = {
+    'stat_low_perplexity': 12,
+    'stat_low_burstiness': 10,
+    'stat_uniform_entropy': 8,
 }
 
 
@@ -333,6 +353,30 @@ def detect_academic(text):
                 'text': f'确定性表述 {certain_count} 次，完全缺少学术犹豫语',
                 'severity': 'medium'})
 
+    # ── 11. 统计特征：N-gram 困惑度 ──
+    ngram_stats = None
+    if ngram_analyze and char_count >= 100:
+        ngram_stats = ngram_analyze(text)
+        indicators = ngram_stats.get('indicators', {})
+
+        if indicators.get('low_perplexity'):
+            ppl = ngram_stats['perplexity']
+            issues['stat_low_perplexity'].append({
+                'text': f'文本困惑度 {ppl:.1f}（学术 AI 文本通常在此范围内）',
+                'severity': 'statistical'})
+
+        if indicators.get('low_burstiness'):
+            burst = ngram_stats['burstiness']
+            issues['stat_low_burstiness'].append({
+                'text': f'困惑度变异系数 {burst:.3f}（过于均匀，缺少写作起伏）',
+                'severity': 'statistical'})
+
+        if indicators.get('uniform_entropy'):
+            ent_cv = ngram_stats['entropy_cv']
+            issues['stat_uniform_entropy'].append({
+                'text': f'段落熵变异系数 {ent_cv:.3f}（段落间复杂度过于一致）',
+                'severity': 'statistical'})
+
     # ── Metrics ──
     entropy = char_entropy(text)
     metrics = {
@@ -347,13 +391,27 @@ def detect_academic(text):
         'citation_count': total_cites,
     }
 
+    # Add statistical metrics if available
+    if ngram_stats:
+        metrics['perplexity'] = ngram_stats['perplexity']
+        metrics['burstiness'] = ngram_stats['burstiness']
+        metrics['entropy_cv'] = ngram_stats['entropy_cv']
+
     return issues, metrics
 
 
 def calculate_academic_score(issues):
-    """Calculate AIGC probability score 0-100 for academic text."""
+    """Calculate AIGC probability score 0-100 for academic text.
+    
+    Scoring composition:
+      - Rule-based dimensions: ~75% weight
+      - Statistical features (perplexity/burstiness/entropy): ~25% weight
+    """
     raw = 0
     for dim, items in issues.items():
+        # Skip statistical items — scored separately
+        if dim.startswith('stat_'):
+            continue
         weight = DIMENSION_WEIGHTS.get(dim, 3)
         for item in items:
             sev = item.get('severity', 'medium')
@@ -362,8 +420,18 @@ def calculate_academic_score(issues):
             count = item.get('count', 1)
             sev_mult = {'critical': 1.5, 'high': 1.0, 'medium': 0.6, 'low': 0.3}.get(sev, 0.6)
             raw += weight * sev_mult * min(count, 5)
-    score = min(100, int(raw * 0.9))
-    return score
+    
+    # Rule-based score (cap at ~75 points)
+    rule_score = min(75, int(raw * 0.7))
+    
+    # Statistical score (up to 25 points)
+    stat_score = 0
+    for dim, items in issues.items():
+        if dim.startswith('stat_') and items:
+            stat_score += STATISTICAL_WEIGHTS.get(dim, 5)
+    stat_score = min(25, stat_score)
+    
+    return min(100, rule_score + stat_score)
 
 
 def score_to_level(score):
@@ -809,6 +877,10 @@ DIMENSION_NAMES = {
     'over_enumeration':      ('🟡', '过度列举'),
     'perfect_conclusion':    ('🟠', '结论过于圆满'),
     'certainty_overuse':     ('🟠', '语气过于确定'),
+    # Statistical features
+    'stat_low_perplexity':   ('📊', '困惑度异常低'),
+    'stat_low_burstiness':   ('📊', '困惑度变化均匀'),
+    'stat_uniform_entropy':  ('📊', '段落熵值均匀'),
 }
 
 
