@@ -1,6 +1,6 @@
 ---
 name: humanize-chinese
-description: Detect and humanize AI-generated Chinese text. 20+ detection categories, weighted 0-100 scoring with sentence-level analysis, 7 style transforms (casual/zhihu/xiaohongshu/wechat/academic/literary/weibo), sentence restructuring, context-aware replacement. Pure Python, no dependencies. v2.0.0
+description: Detect and humanize AI-generated Chinese text. 20+ detection categories, weighted 0-100 scoring with sentence-level analysis, 7 style transforms (casual/zhihu/xiaohongshu/wechat/academic/literary/weibo), sentence restructuring, context-aware replacement. Academic paper AIGC reduction for CNKI/VIP/Wanfang (知网/维普/万方 AIGC 检测降重), 10 academic detection dimensions, 120+ scholarly expression replacements, hedging language injection. Pure Python, no dependencies. v2.1.0
 allowed-tools:
   - Read
   - Write
@@ -158,6 +158,51 @@ This first humanizes (removes AI patterns) then applies the style transform.
 
 ---
 
+## 🎓 Academic Paper AIGC Reduction
+
+Specialized tool for reducing AIGC detection rates on Chinese academic papers (知网/维普/万方).
+
+```bash
+# Detect academic AIGC patterns
+python scripts/academic_cn.py paper.txt
+python scripts/academic_cn.py paper.txt --detect-only -v
+python scripts/academic_cn.py paper.txt --detect-only -j
+
+# Rewrite and save
+python scripts/academic_cn.py paper.txt -o clean.txt
+python scripts/academic_cn.py paper.txt -o clean.txt --aggressive
+
+# Compare before/after
+python scripts/academic_cn.py paper.txt -o clean.txt --compare
+```
+
+### 10 Detection Dimensions
+
+| Dimension | Description |
+|-----------|-------------|
+| AI 学术措辞 | Template academic phrases ("本文旨在", "具有重要意义") |
+| 被动句式过度 | Overuse of passive voice ("被广泛应用", "被认为是") |
+| 段落结构整齐 | Uniform paragraph structure and length |
+| 连接词密集 | High density of logical connectors |
+| 同义表达匮乏 | Lack of synonym variety |
+| 引用整合度低 | Mechanical citation integration |
+| 数据论述模板化 | Template data narration ("从表中可以看出") |
+| 过度列举 | Excessive enumeration |
+| 结论过于圆满 | Perfect conclusions without limitations |
+| 语气过于确定 | Overly certain tone lacking academic hedging |
+
+### Rewriting Strategy
+
+- Maintains academic rigor (no colloquialization)
+- 120+ scholarly expression replacements
+- Hedging language injection (学术犹豫语)
+- Author voice enhancement ("笔者认为" vs "研究表明")
+- Structure variation (breaks uniform patterns)
+- Long sentence splitting
+- Limitation markers for conclusions
+
+---
+
 ## External Configuration
 
 All patterns, replacements, and scoring weights are in `scripts/patterns_cn.json`. Edit this file to:
@@ -204,6 +249,23 @@ python scripts/humanize_cn.py [file] [-o output] [--scene S] [--style S] [-a] [-
 ```bash
 python scripts/style_cn.py [file] --style S [-o output] [--seed N] [--list]
 ```
+
+### academic_cn.py
+
+```bash
+python scripts/academic_cn.py [file] [-o output] [--detect-only] [-a] [--compare] [-j] [-s] [-v] [--seed N]
+```
+
+| Flag | Description |
+|------|-------------|
+| `-o` | Output file (triggers rewriting) |
+| `--detect-only` | Detection only, no rewriting |
+| `-a` | Aggressive mode (more replacements, more hedging) |
+| `--compare` | Show before/after score comparison |
+| `-j` | JSON output (detection mode) |
+| `-s` | Score only |
+| `-v` | Verbose mode |
+| `--seed` | Random seed for reproducibility |
 
 ### compare_cn.py
 
