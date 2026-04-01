@@ -256,6 +256,12 @@ for f in *.md; do python scripts/humanize_cn.py "$f" -a -o "${f%.md}_clean.md"; 
 
 ---
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=voidborne-d/humanize-chinese&type=Date)](https://star-history.com/#voidborne-d/humanize-chinese&Date)
+
+---
+
 ## License
 
 MIT — 随便用，不用付钱，不用署名。
