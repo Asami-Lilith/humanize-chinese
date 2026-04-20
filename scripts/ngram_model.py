@@ -1023,6 +1023,77 @@ def analyze_text(text):
     }
 
 
+# ─── LR ensemble feature extraction (F-path F-2) ───
+
+LR_FEATURE_NAMES = (
+    'perplexity',
+    'burstiness',
+    'entropy_cv',
+    'diveye_skew',
+    'diveye_excess_kurt',
+    'diveye_spectral_flatness',
+    'diveye_autocorr_lag1',
+    'gltr_top10_frac',
+    'gltr_top100_frac',
+    'sent_len_cv',
+    'sent_len_short_frac',
+    'sent_len_long_frac',
+    'sent_len_equal_mid_frac',
+    'punct_comma_density',
+    'punct_density',
+    'trans_density',
+    'curv_mean',
+    'bino_lp_diff',
+)
+
+
+def extract_feature_vector(text_or_analysis):
+    """Flatten analyze_text output into a fixed-length 18-feature vector for LR.
+
+    Accepts either raw text (re-runs analyze_text) or a pre-computed analysis
+    dict (saves one full pass when upstream already has it).
+
+    Returns (vector, names) where vector is list of 18 floats in LR_FEATURE_NAMES
+    order. All features are continuous; missing/unavailable features default to
+    0.0 (e.g., Binoculars returns 0 when secondary ngram file absent).
+    """
+    if isinstance(text_or_analysis, str):
+        analysis = analyze_text(text_or_analysis)
+    else:
+        analysis = text_or_analysis
+
+    diveye = analysis.get('diveye', {}) or {}
+    gltr = analysis.get('gltr', {}) or {}
+    gltr_props = gltr.get('proportions', {}) if gltr else {}
+    sent_len = analysis.get('sent_len', {}) or {}
+    punct = analysis.get('punct', {}) or {}
+    trans = analysis.get('trans', {}) or {}
+    curv = analysis.get('curv', {}) or {}
+    bino = analysis.get('bino', {}) or {}
+
+    vec = [
+        float(analysis.get('perplexity') or 0.0),
+        float(analysis.get('burstiness') or 0.0),
+        float(analysis.get('entropy_cv') or 0.0),
+        float(diveye.get('skew') or 0.0),
+        float(diveye.get('excess_kurt') or 0.0),
+        float(diveye.get('spectral_flatness') or 0.0),
+        float(diveye.get('autocorr_lag1') or 0.0),
+        float(gltr_props.get('top10') or 0.0),
+        float(gltr_props.get('top100') or 0.0),  # mid-rank analog
+        float(sent_len.get('cv') or 0.0),
+        float(sent_len.get('short_frac') or 0.0),
+        float(sent_len.get('long_frac') or 0.0),
+        float(sent_len.get('equal_mid_frac') or 0.0),
+        float(punct.get('comma_density') or 0.0),
+        float(punct.get('punct_density') or 0.0),
+        float(trans.get('density') or 0.0),
+        float(curv.get('curvature_mean') or 0.0),
+        float(bino.get('mean_lp_diff') or 0.0),
+    ]
+    return vec, list(LR_FEATURE_NAMES)
+
+
 # ─── CLI ───
 
 def main():
