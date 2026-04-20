@@ -712,7 +712,9 @@ def main():
     parser.add_argument('-s', '--score', action='store_true', help='仅输出分数')
     parser.add_argument('-v', '--verbose', action='store_true', help='详细模式（含逐句分析）')
     parser.add_argument('--sentences', type=int, default=5, help='显示最可疑的 N 个句子')
-    
+    parser.add_argument('--lr', action='store_true',
+                        help='用 LR ensemble 打分（F-path 实验特性，需要 scripts/lr_coef_cn.json）')
+
     args = parser.parse_args()
     
     # Read input
@@ -732,7 +734,19 @@ def main():
     
     # Detect
     issues, metrics = detect_patterns(text)
-    score = calculate_score(issues, metrics)
+    if args.lr:
+        try:
+            from ngram_model import compute_lr_score
+        except ImportError:
+            from scripts.ngram_model import compute_lr_score
+        lr_result = compute_lr_score(text)
+        if lr_result is None:
+            print('错误: --lr 需要 scripts/lr_coef_cn.json，请先运行 train_lr_scorer.py', file=sys.stderr)
+            sys.exit(1)
+        score = lr_result['score']
+        metrics['_lr'] = lr_result
+    else:
+        score = calculate_score(issues, metrics)
     
     # Sentence analysis (verbose mode)
     worst_sentences = None
