@@ -10,5 +10,5 @@ scripts/ngram_freq_cn_human.json
 evals/compression_ai_seed.txt
 evals/compression_human_seed.txt
 
-# Local-only: I-path academic LR coefficient files (regenerable)
-scripts/lr_coef_academic.json
+# scripts/lr_coef_academic.json is checked in (2KB). To retrain on a
+# different corpus: python scripts/train_lr_academic.py
