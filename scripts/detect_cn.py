@@ -713,9 +713,9 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='详细模式（含逐句分析）')
     parser.add_argument('--sentences', type=int, default=5, help='显示最可疑的 N 个句子')
     parser.add_argument('--lr', action='store_true',
-                        help='用 LR ensemble 打分（F-path 实验特性，需要 scripts/lr_coef_cn.json）')
-    parser.add_argument('--fused', action='store_true',
-                        help='融合 rule+stat 和 LR 打分（0.2*rule + 0.8*LR，最强检测模式）')
+                        help='仅 LR ensemble 打分（诊断用）')
+    parser.add_argument('--rule-only', action='store_true',
+                        help='仅 rule+stat 打分（legacy 模式，忽略 LR 系数）')
 
     args = parser.parse_args()
     
@@ -736,24 +736,26 @@ def main():
     
     # Detect
     issues, metrics = detect_patterns(text)
-    if args.lr or args.fused:
-        try:
-            from ngram_model import compute_lr_score
-        except ImportError:
-            from scripts.ngram_model import compute_lr_score
-        lr_result = compute_lr_score(text)
-        if lr_result is None:
-            print('错误: --lr/--fused 需要 scripts/lr_coef_cn.json，请先运行 train_lr_scorer.py', file=sys.stderr)
-            sys.exit(1)
+    rule_score = calculate_score(issues, metrics)
+
+    # Default mode: fused rule+LR (sway 2026-04-21 directive). Falls back to
+    # rule-only when LR coefs are missing, or when --rule-only is explicitly set.
+    # --lr gives the LR-only score for diagnostics.
+    try:
+        from ngram_model import compute_lr_score
+    except ImportError:
+        from scripts.ngram_model import compute_lr_score
+    lr_result = None if args.rule_only else compute_lr_score(text)
+
+    if args.rule_only or lr_result is None:
+        score = rule_score
+    else:
         metrics['_lr'] = lr_result
-        if args.fused:
-            rule_score = calculate_score(issues, metrics)
+        if args.lr:
+            score = lr_result['score']
+        else:  # default: fused
             score = round(0.2 * rule_score + 0.8 * lr_result['score'])
             metrics['_fused'] = {'rule_stat': rule_score, 'lr': lr_result['score']}
-        else:
-            score = lr_result['score']
-    else:
-        score = calculate_score(issues, metrics)
     
     # Sentence analysis (verbose mode)
     worst_sentences = None
