@@ -864,6 +864,13 @@ def boost_comma_density(text, target=4.7):
             tail_prefix = prefix[-6:] if len(prefix) > 6 else prefix
             if '，' in tail_prefix or ',' in tail_prefix:
                 continue
+            # Skip if prefix ends in a negation/modal that binds tightly to
+            # the marker verb. Covers 不X (不再/不会/不能), 没X, 未X, 别X,
+            # 仍X, 还X, 再X, 才X, 都X etc. Check last two chars so 不再需要
+            # (where char before 需要 is 再) is caught.
+            tail2 = prefix[-2:] if len(prefix) >= 2 else prefix
+            if any(c in '不未没别仍还再才都也' for c in tail2):
+                continue
             # Don't insert at very end either (need some stuff after)
             suffix_cn = sum(1 for c in sent[idx:] if '\u4e00' <= c <= '\u9fff')
             if suffix_cn < 4:
