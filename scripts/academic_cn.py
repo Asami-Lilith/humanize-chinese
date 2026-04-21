@@ -995,7 +995,10 @@ def _add_limitation_markers(text, aggressive=False):
     return text
 
 
-def humanize_academic(text, aggressive=False, seed=None, best_of_n=None):
+DEFAULT_BEST_OF_N = 10
+
+
+def humanize_academic(text, aggressive=False, seed=None, best_of_n=DEFAULT_BEST_OF_N):
     """Apply all academic humanization transforms.
 
     best_of_n: if set to an integer, runs humanize_academic N times with
@@ -1003,7 +1006,7 @@ def humanize_academic(text, aggressive=False, seed=None, best_of_n=None):
     ensemble (requires scripts/lr_coef_cn.json). Higher N is slower; useful
     when caller wants minimum LR score and is willing to pay the latency.
     """
-    if best_of_n is not None and best_of_n > 1:
+    if best_of_n and best_of_n > 1:
         try:
             from ngram_model import compute_lr_score
         except ImportError:
@@ -1343,8 +1346,8 @@ def main():
     parser.add_argument('-s', '--score', action='store_true', help='仅输出分数')
     parser.add_argument('-v', '--verbose', action='store_true', help='详细模式')
     parser.add_argument('--seed', type=int, help='随机种子（可复现）')
-    parser.add_argument('--best-of-n', type=int, default=None, metavar='N',
-                        help='运行 N 次 humanize 取 LR 分数最低的那次（需要 lr_coef_cn.json，N 倍延迟）')
+    parser.add_argument('--best-of-n', type=int, default=DEFAULT_BEST_OF_N, metavar='N',
+                        help=f'运行 N 次 humanize 取 LR 分数最低的那次（默认 {DEFAULT_BEST_OF_N}，N 倍延迟，0 关闭）')
     parser.add_argument('--no-stats', action='store_true',
                        help='跳过统计优化（困惑度反馈），回退到纯规则替换')
     parser.add_argument('--no-noise', action='store_true',
