@@ -538,9 +538,9 @@ def _load_news_freq():
 def compute_news_lp_diff(text):
     """News-vs-{human, wiki} log-prob divergences.
 
-    HC3 300+300 pilot Cohen's d: news_vs_human=0.71, news_vs_wiki=0.70.
-    Register: AI is closer to news (formal journalistic) than casual human Q&A,
-    and more wiki-like than news-like (which differs from Q&A register).
+    HC3 300+300 Cohen's d on expanded 10-category news corpus:
+    news_vs_human=1.20, news_vs_wiki=0.27. AI text is much closer
+    to news register than casual human Q&A answers are.
     """
     news = _load_news_freq()
     human = _load_human_freq()
@@ -1211,8 +1211,8 @@ LR_FEATURE_NAMES = (
     'uni_tri_ratio',        # F-2 multi-scale ratio, HC3 d=0.31
     'wiki_vs_human',        # F-3 2026-04-22, HC3 d=1.58
     'wiki_vs_primary',      # F-3 2026-04-22, HC3 d=1.13
-    'news_vs_human',        # F-11 2026-04-22, HC3 d=0.71
-    'news_vs_wiki',         # F-11 2026-04-22, HC3 d=0.70
+    'news_vs_human',        # F-11 2026-04-22, HC3 d=1.20 (on 10-category news corpus)
+    'news_vs_wiki',         # F-11 2026-04-22, HC3 d=0.27
 )
 
 
