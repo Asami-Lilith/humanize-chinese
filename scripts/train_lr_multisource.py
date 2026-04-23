@@ -23,6 +23,7 @@ HC3_PATH = os.path.join(WORKSPACE, 'data/hc3_chinese_all.jsonl')
 CUDRT_PATH = '/tmp/cudrt_rewrite/Rewrite.json'
 AI_LONGFORM_PATH = os.path.join(WORKSPACE, 'data/ai_longform_corpus.jsonl')
 HUMAN_NOVEL_PATH = os.path.join(WORKSPACE, 'data/human_novel_corpus.jsonl')
+HUMAN_NEWS_PATH = os.path.join(WORKSPACE, 'data/human_news_corpus.jsonl')
 DEFAULT_OUT = os.path.join(SCRIPT_DIR, 'lr_coef_cn.json')
 
 sys.path.insert(0, SCRIPT_DIR)
@@ -107,6 +108,25 @@ def load_human_novel(path, n=80, seed=42, min_cn=400):
     return texts[:n]
 
 
+def load_human_news(path, n=200, seed=42, min_cn=600):
+    """Human-written long-form news from CNewSum (pre-LLM era, journalism)."""
+    rng = random.Random(seed + 4)
+    texts = []
+    if not os.path.exists(path):
+        return texts
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            try:
+                d = json.loads(line)
+            except Exception:
+                continue
+            t = d.get('text', '')
+            if t and sum(1 for c in t if '\u4e00' <= c <= '\u9fff') >= min_cn:
+                texts.append(t)
+    rng.shuffle(texts)
+    return texts[:n]
+
+
 def standardize(X_train, X_holdout):
     n_feat = len(X_train[0])
     means = [mean(x[f] for x in X_train) for f in range(n_feat)]
@@ -122,6 +142,7 @@ def main():
     ap.add_argument('--n-cudrt', type=int, default=300)
     ap.add_argument('--n-ai-longform', type=int, default=80)
     ap.add_argument('--n-human-novel', type=int, default=80)
+    ap.add_argument('--n-human-news', type=int, default=200)
     ap.add_argument('--seed', type=int, default=42)
     ap.add_argument('--c', type=float, default=1.0)
     args = ap.parse_args()
@@ -142,9 +163,13 @@ def main():
     human_novel = load_human_novel(HUMAN_NOVEL_PATH, n=args.n_human_novel, seed=args.seed)
     print(f'  Human novel: {len(human_novel)}')
 
+    print(f'Loading human news (n={args.n_human_news})...')
+    human_news = load_human_news(HUMAN_NEWS_PATH, n=args.n_human_news, seed=args.seed)
+    print(f'  Human news: {len(human_news)}')
+
     # Combine
     ai_all = hc3_ai + cudrt_ai + ai_longform
-    hum_all = hc3_hum + cudrt_hum + human_novel
+    hum_all = hc3_hum + cudrt_hum + human_novel + human_news
     n = min(len(ai_all), len(hum_all))
     ai_all = ai_all[:n]
     hum_all = hum_all[:n]
