@@ -1218,17 +1218,22 @@ LR_FEATURE_NAMES = (
 _LR_COEF_CACHE = {}
 _LR_COEF_FILE = os.path.join(SCRIPT_DIR, 'lr_coef_cn.json')
 _LR_COEF_ACADEMIC_FILE = os.path.join(SCRIPT_DIR, 'lr_coef_academic.json')
+_LR_COEF_LONGFORM_FILE = os.path.join(SCRIPT_DIR, 'lr_coef_longform.json')
 
 
 def _load_lr_coef(path=None, scene='general'):
     """Load LR coefficients + scaler stats from JSON. Cached per file.
 
-    scene: 'general' -> lr_coef_cn.json, 'academic' -> lr_coef_academic.json.
-    Falls back to general if academic file missing.
+    scene: 'general' -> lr_coef_cn.json; 'academic' -> lr_coef_academic.json;
+    'novel' / 'longform' -> lr_coef_longform.json (trained on AI long-form
+    + human novel/news corpora). Falls back to general if the scene file
+    is absent.
     """
     if path is None:
         if scene == 'academic' and os.path.exists(_LR_COEF_ACADEMIC_FILE):
             path = _LR_COEF_ACADEMIC_FILE
+        elif scene in ('novel', 'longform') and os.path.exists(_LR_COEF_LONGFORM_FILE):
+            path = _LR_COEF_LONGFORM_FILE
         else:
             path = _LR_COEF_FILE
     if path in _LR_COEF_CACHE:
