@@ -21,6 +21,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 WORKSPACE = '/Users/mac/claudeclaw/humanize'
 HC3_PATH = os.path.join(WORKSPACE, 'data/hc3_chinese_all.jsonl')
 CUDRT_PATH = '/tmp/cudrt_rewrite/Rewrite.json'
+AI_LONGFORM_PATH = os.path.join(WORKSPACE, 'data/ai_longform_corpus.jsonl')
+HUMAN_NOVEL_PATH = os.path.join(WORKSPACE, 'data/human_novel_corpus.jsonl')
 DEFAULT_OUT = os.path.join(SCRIPT_DIR, 'lr_coef_cn.json')
 
 sys.path.insert(0, SCRIPT_DIR)
@@ -65,6 +67,46 @@ def load_cudrt(path, n_per_class=300, seed=42, min_cn=200):
     return ai, hum
 
 
+def load_ai_longform(path, n=80, seed=42, min_cn=200):
+    """AI long-form (modern LLMs across 5 genres) — addresses issue #5
+    undercount on novel/blog register."""
+    rng = random.Random(seed + 2)
+    texts = []
+    if not os.path.exists(path):
+        return texts
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            try:
+                d = json.loads(line)
+            except Exception:
+                continue
+            t = d.get('text', '')
+            if t and sum(1 for c in t if '\u4e00' <= c <= '\u9fff') >= min_cn:
+                texts.append(t)
+    rng.shuffle(texts)
+    return texts[:n]
+
+
+def load_human_novel(path, n=80, seed=42, min_cn=400):
+    """Human-written fiction passages from v3ucn/chinese-novel-dataset
+    (pre-LLM era, Chinese literary register)."""
+    rng = random.Random(seed + 3)
+    texts = []
+    if not os.path.exists(path):
+        return texts
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            try:
+                d = json.loads(line)
+            except Exception:
+                continue
+            t = d.get('text', '')
+            if t and sum(1 for c in t if '\u4e00' <= c <= '\u9fff') >= min_cn:
+                texts.append(t)
+    rng.shuffle(texts)
+    return texts[:n]
+
+
 def standardize(X_train, X_holdout):
     n_feat = len(X_train[0])
     means = [mean(x[f] for x in X_train) for f in range(n_feat)]
@@ -78,6 +120,8 @@ def main():
     ap.add_argument('--out', default=DEFAULT_OUT)
     ap.add_argument('--n-hc3', type=int, default=300)
     ap.add_argument('--n-cudrt', type=int, default=300)
+    ap.add_argument('--n-ai-longform', type=int, default=80)
+    ap.add_argument('--n-human-novel', type=int, default=80)
     ap.add_argument('--seed', type=int, default=42)
     ap.add_argument('--c', type=float, default=1.0)
     args = ap.parse_args()
@@ -90,9 +134,17 @@ def main():
     cudrt_ai, cudrt_hum = load_cudrt(CUDRT_PATH, n_per_class=args.n_cudrt, seed=args.seed)
     print(f'  CUDRT AI={len(cudrt_ai)}, human={len(cudrt_hum)}')
 
+    print(f'Loading AI long-form (n={args.n_ai_longform})...')
+    ai_longform = load_ai_longform(AI_LONGFORM_PATH, n=args.n_ai_longform, seed=args.seed)
+    print(f'  AI long-form: {len(ai_longform)}')
+
+    print(f'Loading human novels (n={args.n_human_novel})...')
+    human_novel = load_human_novel(HUMAN_NOVEL_PATH, n=args.n_human_novel, seed=args.seed)
+    print(f'  Human novel: {len(human_novel)}')
+
     # Combine
-    ai_all = hc3_ai + cudrt_ai
-    hum_all = hc3_hum + cudrt_hum
+    ai_all = hc3_ai + cudrt_ai + ai_longform
+    hum_all = hc3_hum + cudrt_hum + human_novel
     n = min(len(ai_all), len(hum_all))
     ai_all = ai_all[:n]
     hum_all = hum_all[:n]
