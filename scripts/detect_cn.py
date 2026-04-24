@@ -716,7 +716,7 @@ def main():
                         help='仅 LR ensemble 打分（诊断用）')
     parser.add_argument('--rule-only', action='store_true',
                         help='仅 rule+stat 打分（legacy 模式，忽略 LR 系数）')
-    parser.add_argument('--scene', default='general', choices=['general', 'academic', 'novel'],
+    parser.add_argument('--scene', default='general', choices=['general', 'academic', 'novel', 'auto'],
                         help='LR 场景（academic 自动用 lr_coef_academic.json）')
 
     args = parser.parse_args()

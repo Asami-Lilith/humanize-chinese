@@ -1249,14 +1249,29 @@ def _load_lr_coef(path=None, scene='general'):
     return data
 
 
+def _auto_scene(text_or_analysis, short_thresh=1500):
+    """Choose scene by text length. Long text (>= 1500 Chinese chars)
+    routes to the long-form LR; shorter text stays on general. Academic
+    is never auto-selected — users must opt in explicitly."""
+    if isinstance(text_or_analysis, str):
+        cn = sum(1 for c in text_or_analysis if '\u4e00' <= c <= '\u9fff')
+    else:
+        cn = text_or_analysis.get('char_count', 0)
+    return 'novel' if cn >= short_thresh else 'general'
+
+
 def compute_lr_score(text_or_analysis, coef_path=None, scene='general'):
     """Score text via LR ensemble. Returns dict with p_ai, score_0_100,
     and feature contributions.
 
     scene: 'general' (default) uses lr_coef_cn.json; 'academic' uses
-    lr_coef_academic.json when present. Explicit coef_path overrides scene.
+    lr_coef_academic.json; 'novel'/'longform' uses lr_coef_longform.json;
+    'auto' routes to novel for long text (>= 1500 Chinese chars) and
+    general otherwise. Explicit coef_path overrides scene.
     Returns None if the requested coef file is absent.
     """
+    if scene == 'auto':
+        scene = _auto_scene(text_or_analysis)
     coef = _load_lr_coef(coef_path, scene=scene)
     if coef is None:
         return None
