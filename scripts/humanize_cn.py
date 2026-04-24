@@ -787,6 +787,11 @@ def inject_noise_expressions(text, density=0.15, style='general'):
         s_text = sentences[i][0]
         if len(re.findall(r'[\u4e00-\u9fff]', s_text)) < 8:
             continue
+        # Skip sentences that contain dialogue quotes. Injecting a noise
+        # expression into a quoted line puts narrator filler inside a
+        # character's mouth \u2014 awkward and breaks dialogue flow.
+        if '"' in s_text or '\u201c' in s_text or '\u201d' in s_text or '\u300c' in s_text or '\u300d' in s_text:
+            continue
         if random.random() > density:
             continue
 
