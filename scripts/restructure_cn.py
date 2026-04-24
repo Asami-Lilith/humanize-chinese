@@ -885,13 +885,19 @@ def boost_comma_density(text, target=4.7):
 
 
 def _dialogue_density(text):
-    """Fraction of chars inside quoted dialogue. AI novels have 29% mean,
-    academic/news/blog under 11%. Threshold 0.08 flags narrative text.
-    Chinese fiction uses curly “” or corner 「」 brackets, not ASCII "."""
+    """Fraction of chars inside quoted dialogue. AI novels use a mix of
+    curly U+201C/D (“”), corner U+300C/D (「」), and ASCII " pairs
+    depending on model. Threshold 0.08 flags narrative text."""
     n = 0
     for p in (r'“[^“”]{3,}?”', r'「[^「」]{3,}?」'):
         for m in re.findall(p, text):
             n += len(m)
+    # ASCII " pairs: split, odd-indexed segments are inside quotes
+    parts = text.split('"')
+    if len(parts) >= 3:
+        for i in range(1, len(parts), 2):
+            if len(parts[i]) >= 3:
+                n += len(parts[i])
     return n / max(1, len(text))
 
 

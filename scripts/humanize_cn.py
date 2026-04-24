@@ -723,12 +723,19 @@ def randomize_sentence_lengths(text, aggressive=False, seed=None):
 # ═══════════════════════════════════════════════════════════════════
 
 def _dialogue_density_local(text):
-    """Fraction of chars inside Chinese curly quotes (U+201C/D) or corner
-    brackets (U+300C/D). Threshold 0.08 flags narrative text."""
+    """Fraction of chars inside Chinese dialogue quotes. AI novels use a
+    mix of curly U+201C/D (“”), corner U+300C/D (「」), and ASCII pairs
+    (which some models output instead). Threshold 0.08 flags narrative."""
     n = 0
     for pat in (r'“[^“”]{3,}?”', r'「[^「」]{3,}?」'):
         for m in re.findall(pat, text):
             n += len(m)
+    # ASCII " pairs: split on ", odd-indexed segments are inside quotes
+    parts = text.split('"')
+    if len(parts) >= 3:
+        for i in range(1, len(parts), 2):
+            if len(parts[i]) >= 3:
+                n += len(parts[i])
     return n / max(1, len(text))
 
 
