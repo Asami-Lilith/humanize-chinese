@@ -662,8 +662,11 @@ def randomize_sentence_lengths(text, aggressive=False, seed=None):
             )
             s_stripped = s.strip()
             s2_stripped = s2.strip()
-            if s_stripped in _reactions or s2_stripped in _reactions:
-                # Preserve reaction as standalone sentence
+            # Paragraph boundary: split by [。！？] preserves \n\n as leading
+            # whitespace on the next sentence. Merging would .lstrip() the
+            # \n\n away and collapse two paragraphs into one — discourse
+            # structure loss (Petalses issue #5).
+            if '\n' in s2 or s_stripped in _reactions or s2_stripped in _reactions:
                 pass
             elif cn_len + cn_len2 < 100:
                 merged = s.rstrip() + '，' + s2.lstrip()
@@ -766,17 +769,25 @@ def inject_noise_expressions(text, density=0.15, style='general'):
 
         s, p = sentences[i]
 
+        # Preserve leading whitespace (\n\n paragraph breaks) — sentences
+        # that start a new paragraph have \n\n at their head (artifact of
+        # the [。！？] split). .lstrip() would eat those and collapse
+        # paragraph structure.
+        leading_ws_len = len(s) - len(s.lstrip())
+        leading = s[:leading_ws_len]
+        s_body = s[leading_ws_len:]
+
         # Decide insertion position
         if cat in ('hedging', 'filler', 'personal', 'transition_casual'):
-            # Insert at sentence beginning
-            s = expr + '，' + s.lstrip()
+            # Insert at sentence beginning (after any paragraph break)
+            s = leading + expr + '，' + s_body
         elif cat in ('self_correction', 'uncertainty'):
             # Insert mid-sentence at a comma
-            comma_pos = s.find('，')
+            comma_pos = s_body.find('，')
             if comma_pos > 3:
-                s = s[:comma_pos + 1] + expr + '，' + s[comma_pos + 1:]
+                s = leading + s_body[:comma_pos + 1] + expr + '，' + s_body[comma_pos + 1:]
             else:
-                s = expr + '，' + s.lstrip()
+                s = leading + expr + '，' + s_body
 
         sentences[i] = [s, p]
         injected += 1
@@ -873,11 +884,17 @@ def merge_short_sentences(text, min_len=8):
         next_sent = sentences[i + 2] if i + 2 < len(sentences) else ''
         
         if len(sent.strip()) < min_len and len(next_sent.strip()) < min_len and next_sent.strip():
-            # Merge with comma
-            merged = sent.strip() + '，' + next_sent.strip()
-            next_punct = sentences[i + 3] if i + 3 < len(sentences) else '。'
-            result.append(merged + next_punct)
-            i += 4
+            # Don't merge across paragraph boundaries — \n\n leading
+            # next_sent would be stripped by .strip(), collapsing paragraphs.
+            if '\n' in sent or '\n' in next_sent:
+                result.append(sent + punct)
+                i += 2
+            else:
+                # Merge with comma
+                merged = sent.strip() + '，' + next_sent.strip()
+                next_punct = sentences[i + 3] if i + 3 < len(sentences) else '。'
+                result.append(merged + next_punct)
+                i += 4
         else:
             result.append(sent + punct)
             i += 2
