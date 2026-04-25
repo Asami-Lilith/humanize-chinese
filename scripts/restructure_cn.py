@@ -752,6 +752,15 @@ def remove_ai_fillers(text, delete_prob=0.5):
         matches = list(re.finditer(pattern, text))
         for m in reversed(matches):  # 从后往前删，避免位移
             if random.random() < delete_prob:
+                # Word-boundary doubling guard: deletion can collapse the
+                # left context onto the right context. If the char before
+                # the filler equals the first char after it, deleting would
+                # produce a doubled char ("尤其值得一提的是，其自主研发"
+                # → "尤其其自主研发"). Skip deletion in that case.
+                left_ch = text[m.start() - 1:m.start()] if m.start() > 0 else ''
+                right_ch = text[m.end():m.end() + 1]
+                if left_ch and left_ch == right_ch:
+                    continue
                 text = text[:m.start()] + text[m.end():]
 
     return text
@@ -995,7 +1004,19 @@ def _insert_reactions_in_paragraph(p, target, max_per, min_sentences=3, scene='g
             if not avail:
                 avail = _SHORT_REACTIONS_NEUTRAL  # fallback when pool exhausted
         else:
-            avail = _SHORT_REACTIONS_NEUTRAL
+            avail = list(_SHORT_REACTIONS_NEUTRAL)
+        # Word-boundary doubling guard: skip reactions whose first char
+        # matches the last char of the preceding sentence ("...安全性和有"
+        # + "有一定道理" → "...和有有一定道理"). Falls back to the full
+        # avail list if filtering leaves nothing.
+        prev_last = ''
+        if sentences:
+            tail = sentences[-1].rstrip('。！？，, ')
+            prev_last = tail[-1:] if tail else ''
+        if prev_last:
+            non_doubling = [r for r in avail if r and r[0] != prev_last]
+            if non_doubling:
+                avail = non_doubling
         reaction = random.choice(avail)
         if used is not None:
             used.add(reaction)
