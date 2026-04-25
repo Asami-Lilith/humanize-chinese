@@ -202,10 +202,14 @@ python scripts/detect_cn.py 论文.txt --scene academic  # 学术论文（显式
 ./humanize style text.txt --style xiaohongshu   # 小红书
 ./humanize style text.txt --style zhihu         # 知乎
 ./humanize style text.txt --style weibo         # 微博
+./humanize style chapter.txt --style novel      # 小说/长篇叙事
 ```
 
-7 种风格：口语化 / 知乎 / 小红书 / 公众号 / 学术 / 文艺 / 微博
-（风格转换会先自动跑一遍 humanize，去掉 AI 高频词，再套风格。`--no-humanize` 关闭。）
+8 种风格：口语化 / 知乎 / 小红书 / 公众号 / 学术 / 文艺 / 微博 / **小说**
+
+`--style novel` 专为长篇叙事设计：humanize 后剔除 AI 写小说时常混入的元说明（"我将按照您的要求创作..."、"故事梗概"、"本次写作"）+ markdown 章节头 (## ###) + 大纲 bullet (- **关键点**：) + 分隔线，保段落不加 emoji/hashtag。处理长篇章节、博客时观感更干净。
+
+风格转换会先自动跑一遍 humanize，去掉 AI 高频词，再套风格。`--no-humanize` 关闭。
 
 ---
 
@@ -215,9 +219,9 @@ python scripts/detect_cn.py 论文.txt --scene academic  # 学术论文（显式
 |------|------|
 | 🔍 AI 检测 | 20+ 规则维度 + **三路 LR 分场景校准**（general / academic / novel），0-100 评分 |
 | 📈 统计层 | 字符级 trigram 困惑度 + DivEye 惊奇度 + GLTR rank 分桶 + 句长 burstiness + 标点密度 |
-| ✏️ 智能改写 | 困惑度引导选词 + 低频 bigram 注入 + 短句插入 + 句长随机化 + **40 paraphrase 模板** + 三档自适应强度 |
+| ✏️ 智能改写 | 困惑度引导选词 + 低频 bigram 注入 + 短句插入 + 句长随机化 + **40 paraphrase 模板** + **144 条短语替换** + 三档自适应强度 + **多段 \n\n 段落保留**（长篇章节不丢结构）|
 | 🎓 学术降重 | 10 维度检测（含扩散度）+ **126 条学术替换** + 独立 picker 策略，针对知网/维普/万方 |
-| 🎨 风格转换 | 7 种中文写作风格（知乎/小红书/微博/公众号/学术/文艺/口语化） |
+| 🎨 风格转换 | 8 种中文写作风格（知乎/小红书/微博/公众号/学术/文艺/口语化/**小说**） |
 | 📊 前后对比 | 学术分 + 通用分双评分，改写效果一目了然 |
 | 🔄 可复现 | `--seed` 保证相同输入相同输出 |
 | ⚡ 速度 | 10k 字符 `--quick` 模式 0.3 秒，完整模式 5 秒 |
@@ -412,6 +416,20 @@ for f in *.md; do ./humanize rewrite "$f" -a -o "${f%.md}_clean.md"; done
 
 **简单说：各领域改写后都能降 22-53 分，长文本+专业领域（心理/医学/法律/金融）效果最显著。**
 
+### 长文本基准（170 AI 长篇 × 5 体裁，--scene novel 检测）
+
+针对 GPT-4o / Claude-sonnet-4 / Gemini-2.5-flash / DeepSeek / Qwen 写的 5 类长文本（小说/学术/新闻/博客/评论），用专门的长篇 LR 校准跑：
+
+| 体裁 | n | AI 原分 | 改写后 | 下降 |
+|---|---|---|---|---|
+| 📚 博客 | 50 | 78.7 | 42.4 | **-36.3** |
+| 🎬 评论 | 20 | 85.7 | 53.9 | **-31.8** |
+| 📰 新闻 | 20 | 87.9 | 69.2 | **-18.8** |
+| 📖 小说 | 60 | 66.3 | 46.8 | **-19.5** |
+| 🎓 学术 | 20 | 95.0 | 81.2 | **-13.8** |
+
+整体 gap 51.4，平均降幅 25.1 分，**段落保留率 98.8%**（多段 `\n\n` 章节结构不丢）。学术降幅最低是因为知网风格的术语密集 + markdown 章节结构，纯规则改写空间有限。
+
 ### 需要知道的
 
 - **融合检测（默认）很严**。默认分数 = rule+stat × 0.2 + LR ensemble × 0.8，correct rate 从 75% 提到 95.5%，gap 从 14.8 扩到 60.0。HC3 里典型 ChatGPT 回答现在原分在 64-81 之间，改写后落在 20-57 区间，降幅明显。`--rule-only` 可回退到 legacy rule+stat 评分。
@@ -423,6 +441,9 @@ for f in *.md; do ./humanize rewrite "$f" -a -o "${f%.md}_clean.md"; done
 ```bash
 # 需要先下载 HC3 数据到 ../data/hc3_chinese_all.jsonl
 python evals/run_hc3_benchmark.py --n 200 --seed 42
+
+# 长文本 170 样本 benchmark (含 AI long-form + 人类对照)
+python evals/run_longform_benchmark.py --n-human 60 --seed 42
 ```
 
 ---
