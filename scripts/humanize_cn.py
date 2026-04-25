@@ -245,7 +245,9 @@ WORD_SYNONYMS = {
     '完全': ['彻底', '全然', '纯粹', '压根'],
     '不断': ['持续', '始终', '一再', '反复'],
     '逐渐': ['渐渐', '慢慢', '一步步', '日渐'],
-    '主要': ['核心', '关键', '首要', '最要紧'],
+    # '最要紧' alt removed: when source is '最主要', substitution gives
+    # '最最要紧' (doubled-最 across word boundary).
+    '主要': ['核心', '关键', '首要'],
     '一般': ['通常', '往常', '照例', '大抵'],
     '大量': ['海量', '大批', '众多', '成堆的'],
     '进一步': ['更', '再', '深入', '继续'],
@@ -256,7 +258,10 @@ WORD_SYNONYMS = {
     '必须': ['得', '务必', '非得', '须'],
     '可能': ['也许', '兴许', '或许', '大概'],
     # ── 名词 / 概念 ──
-    '重要': ['关键', '核心', '要紧', '紧要'],
+    # '关键' alt removed: when source is '至关重要' (4-char idiom containing
+    # '重要' as substring), substitution gives '至关关键' (doubled-关 across
+    # word boundary). Other alts ('核心', '要紧', '紧要') preserve the idiom.
+    '重要': ['核心', '要紧', '紧要'],
     '显著': ['明显', '突出', '可观', '醒目'],
     '问题': ['难题', '麻烦', '症结'],
     '方面': ['层面', '维度', '领域'],
@@ -1264,7 +1269,9 @@ def diversify_vocabulary(text):
         '促进': ['推动', '带动'],
         '加强': ['强化', '增强'],
         '提高': ['提升', '增加'],
-        '重要': ['关键', '核心'],
+        # '关键' alt removed: '至关重要' (4-char idiom) -> '至关关键' (doubled-关).
+        # Same idiom-substring boundary issue handled in WORD_SYNONYMS upstream.
+        '重要': ['核心'],
     }
     
     for word, alts in diversity_map.items():

@@ -130,6 +130,10 @@ _DEFECT_PATTERNS = (
     (r'留着神', 'typo_liuzhe_shen'),    # cycle 27 typo
     (r'在[一-鿿]{1,4}左右下', 'idiom_break_yingxiang_zuoyou'),  # cycle 23
     (r'案[察觉识看][觉破察出]场', 'idiom_break_anfa_xianchang'),  # cycle 22
+    (r'阵地地位', 'template13_zhendi_diwei'),  # cycle 30
+    (r'至关关键', 'idiom_break_zhiguan_zhongyao'),  # cycle 31
+    (r'最最要紧', 'doubled_zui'),  # cycle 31 主要→最要紧
+    (r'到到头来', 'doubled_dao'),  # cycle 31 最后→到头来
 )
 
 
