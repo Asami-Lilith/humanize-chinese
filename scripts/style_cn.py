@@ -649,7 +649,9 @@ def apply_style(text, style_name, humanize_first=True, seed=None):
 
     if humanize_first and _humanize_text is not None:
         scene = _STYLE_TO_SCENE.get(style_name, 'general')
-        text = _humanize_text(text, scene=scene, aggressive=False, seed=seed)
+        humanize_style = 'novel' if style_name == 'novel' else None
+        text = _humanize_text(text, scene=scene, aggressive=False, seed=seed,
+                              style=humanize_style)
 
     transform_fn = TRANSFORM_MAP.get(style_name)
     if transform_fn:

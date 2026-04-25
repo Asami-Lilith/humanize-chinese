@@ -436,7 +436,6 @@ NOISE_ACADEMIC_EXPRESSIONS = {
     'uncertainty': ['大致', '似乎', '或许', '多少', '在一定程度上'],
 }
 
-
 def _load_bigram_freq():
     """Load bigram frequencies from the n-gram frequency table."""
     try:
@@ -1252,7 +1251,7 @@ def _estimate_source_aiscore(text):
 DEFAULT_BEST_OF_N = 10
 
 
-def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAULT_BEST_OF_N):
+def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAULT_BEST_OF_N, style=None):
     """Apply all humanization transformations in order.
 
     Graduated intensity based on source AI-score (pre-detect):
@@ -1280,7 +1279,7 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
         for i in range(best_of_n):
             s = base_seed + i
             out = humanize(text, scene=scene, aggressive=aggressive,
-                           seed=s, best_of_n=None)
+                           seed=s, best_of_n=None, style=style)
             lr = compute_lr_score(out)
             score = lr['score'] if lr else 50
             candidates.append((score, s, out))
@@ -1356,7 +1355,13 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
     # that on HC3 sometimes added spurious AI patterns to already-clean text.
     if tier == 'full' and _USE_NOISE:
         noise_density = 0.25 if aggressive else 0.15
-        text = inject_noise_expressions(text, density=noise_density, style='general')
+        # Novel/fiction register: noise injection (regardless of expression
+        # subset) frequently lands on prepositional or vocative sentence heads
+        # ('作为...' / '人物名+verb') and reads as awkward. Lean on word
+        # substitutions + transition cap + paraphrase replacement for delta
+        # in novel mode instead.
+        if style != 'novel':
+            text = inject_noise_expressions(text, density=noise_density, style='general')
         text = randomize_sentence_lengths(text, aggressive=aggressive, seed=seed)
     
     # Final transition cap — AI overuses 首先/然而/此外/因此 etc, detect fires
