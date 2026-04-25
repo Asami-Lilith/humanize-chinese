@@ -929,13 +929,17 @@ def insert_short_reactions(text, target_short_frac=None, max_per_paragraph=1, se
     if target_short_frac is None:
         target_short_frac = 0.22 if scene == 'academic' else 0.15
     paragraphs = text.split('\n\n')
+    # Track reactions already inserted in this text. Without dedupe a sample
+    # with many paragraphs can land "事出有因" 5 times (sample 16 audit) when
+    # random.choice happens to cluster — reads as an obvious AI tic.
+    used = set()
     return '\n\n'.join(
-        _insert_reactions_in_paragraph(p, target_short_frac, max_per_paragraph, min_sentences, scene)
+        _insert_reactions_in_paragraph(p, target_short_frac, max_per_paragraph, min_sentences, scene, used)
         for p in paragraphs
     )
 
 
-def _insert_reactions_in_paragraph(p, target, max_per, min_sentences=3, scene='general'):
+def _insert_reactions_in_paragraph(p, target, max_per, min_sentences=3, scene='general', used=None):
     parts = re.split(r'([。！？])', p)
     sentences = []
     i = 0
@@ -976,7 +980,15 @@ def _insert_reactions_in_paragraph(p, target, max_per, min_sentences=3, scene='g
         gap = max(0.0, target - current_short_frac)
         prob = min(0.85, 0.35 + gap * 3.0)
     if random.random() < prob:
-        reaction = random.choice(_SHORT_REACTIONS_NEUTRAL)
+        if used is not None:
+            avail = [r for r in _SHORT_REACTIONS_NEUTRAL if r not in used]
+            if not avail:
+                avail = _SHORT_REACTIONS_NEUTRAL  # fallback when pool exhausted
+        else:
+            avail = _SHORT_REACTIONS_NEUTRAL
+        reaction = random.choice(avail)
+        if used is not None:
+            used.add(reaction)
         sentences.append(reaction)
 
     return ''.join(sentences)
