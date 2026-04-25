@@ -587,16 +587,36 @@ def reduce_high_freq_bigrams(text, strength=0.3, scene='general'):
         # (avoid monotone repetition of single replacement)
         alt_candidates = [c for c, _ in ranked if c != primary] or [primary]
 
+        # Capture original text for next-char lookups (text mutates inside loop)
+        original_text = text
+        ranked_alts = [c for c, _ in ranked]
+
+        def _pick_safe(default, next_ch):
+            """Avoid alts whose last char equals next_ch (would double).
+            Falls back to default if no safe alt exists."""
+            if not next_ch or default[-1:] != next_ch:
+                return default
+            for cand in ranked_alts:
+                if cand and cand[-1] != next_ch:
+                    return cand
+            return default
+
         # Rebuild text by iterating occurrences back-to-front (avoid shifting positions)
         for k in reversed(range(len(occurrences))):
             pos = occurrences[k]
             if k not in to_replace:
                 continue
+            # Word-boundary doubling guard: check next char in source after the
+            # word being replaced. If alt ends with that char, swap to a
+            # non-doubling alt. Catches '能够以X' → '可以以X' / '系统的研究'
+            # → '架构的的' family of bugs without removing the entry entirely.
+            next_ch = original_text[pos + len(word):pos + len(word) + 1]
             # Pick primary for first replaced occurrence, alternate for others
             if k == min(to_replace):
-                replacement = primary
+                replacement = _pick_safe(primary, next_ch)
             else:
-                replacement = random.choice([primary] + alt_candidates)
+                pick = random.choice([primary] + alt_candidates)
+                replacement = _pick_safe(pick, next_ch)
             protected = _protect(replacement)
             text = text[:pos] + protected + text[pos + len(word):]
 
