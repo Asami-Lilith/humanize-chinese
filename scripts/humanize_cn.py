@@ -810,6 +810,12 @@ def inject_noise_expressions(text, density=0.15, style='general'):
     if len(sentences) < 3:
         return text
 
+    # Track expressions already injected in this run. Re-injecting the same
+    # phrase ("\u5f80\u6df1\u4e86\u8bb2" / "\u5e73\u5fc3\u800c\u8bba") three times in one sample reads as a
+    # tic, which detect_cn flags as repetitive and a human reviewer flags as
+    # robot-style.
+    used = set()
+
     injected = 0
     for i in range(len(sentences)):
         # Skip the last sentence (avoid orphaned expressions)
@@ -831,7 +837,11 @@ def inject_noise_expressions(text, density=0.15, style='general'):
         expr_list = expressions.get(cat, [])
         if not expr_list:
             continue
-        expr = random.choice(expr_list)
+        avail = [e for e in expr_list if e not in used]
+        if not avail:
+            avail = expr_list  # fallback when category exhausted
+        expr = random.choice(avail)
+        used.add(expr)
 
         s, p = sentences[i]
 
