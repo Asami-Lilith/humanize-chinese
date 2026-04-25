@@ -977,6 +977,13 @@ def replace_phrases(text, casualness=0.3):
             while phrase in text:
                 avail = [a for a in safe_alts if a not in used]
                 if not avail:
+                    # Cycle exhausted — clear `used` so the next round
+                    # rotates through the alts again instead of falling
+                    # back to a single deterministic pick. Without this
+                    # reset, sample 38 of the longform corpus rewrites
+                    # 9 occurrences of '然后' as 6×'随后' + '接着' + '之后'
+                    # + '随后' instead of an even distribution.
+                    used.clear()
                     avail = safe_alts
                 replacement = pick_best_replacement(text, phrase, avail)
                 text = text.replace(phrase, replacement, 1)
