@@ -134,6 +134,9 @@ _DEFECT_PATTERNS = (
     (r'至关关键', 'idiom_break_zhiguan_zhongyao'),  # cycle 31
     (r'最最要紧', 'doubled_zui'),  # cycle 31 主要→最要紧
     (r'到到头来', 'doubled_dao'),  # cycle 31 最后→到头来
+    (r'在在', 'doubled_zai'),  # cycle 32 template 7 prefix '在' + X 起 '在'
+    (r'市场场景', 'doubled_chang'),  # cycle 32 环境→场景 + source 市场
+    (r'可以以', 'doubled_yi'),  # cycle 32 template 6 '可以' + Z 起 '以'
 )
 
 

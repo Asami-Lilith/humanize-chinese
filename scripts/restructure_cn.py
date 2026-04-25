@@ -73,19 +73,25 @@ def _build_templates():
     ))
 
     # ── 6. X能够根据Y，Z ──
+    # Previous alt '{X}可以{Z}' doubled 以 when Z starts with 以 ('以应对'
+    # is a frequent idiom suffix). '{X}就能{Z}' avoids the boundary clash
+    # and keeps the same modal sense.
     templates.append((
         re.compile(r'(?P<X>[^，,。]{2,15})能够根据(?P<Y>[^，,。]{2,20})[，,]\s*(?P<Z>[^。！？]{2,25})'),
         [
-            lambda m: f'根据{m.group("Y")}，{m.group("X")}可以{m.group("Z")}',
+            lambda m: f'根据{m.group("Y")}，{m.group("X")}就能{m.group("Z")}',
             lambda m: f'{m.group("X")}会参考{m.group("Y")}来{m.group("Z")}',
         ]
     ))
 
     # ── 7. X为Y提供了Z ──
+    # Previous prefix '在{X}的支持下' doubled 在 when X starts with 在
+    # ('在线学习平台' → '在在线学习平台'). '依托' has no leading char
+    # that would clash with substrings X might start with.
     templates.append((
         re.compile(r'(?P<X>[\u4e00-\u9fff]{2,12})为(?P<Y>[\u4e00-\u9fff]{2,10})提供了(?P<Z>[\u4e00-\u9fff]{2,15})'),
         [
-            lambda m: f'在{m.group("X")}的支持下，{m.group("Y")}获得了{m.group("Z")}',
+            lambda m: f'依托{m.group("X")}，{m.group("Y")}获得了{m.group("Z")}',
         ]
     ))
 
