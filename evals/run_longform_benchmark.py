@@ -108,12 +108,48 @@ _FIRST_PERSON_INTRUSION = (
 )
 
 
-def count_quality_issues(text):
-    """Count residual 观感 violations in humanize output."""
-    return {
+def _count_introduced(text, source, pattern):
+    """Count occurrences of pattern in text that exceed those in source."""
+    n_text = len(re.findall(pattern, text))
+    n_source = len(re.findall(pattern, source))
+    return max(0, n_text - n_source)
+
+
+# Grammar/register defects we've fixed historically and want to keep at 0.
+# Each pattern fires only when humanize *introduces* it (not when source
+# already contains it — '世界各地的协作' has '地的' legitimately).
+_DEFECT_PATTERNS = (
+    (r'地地', 'doubled_di'),          # 副词地+地 — broken by cycle 27/28
+    (r'的的', 'doubled_de'),          # 形容词的+的 — broken by cycle 28
+    (r'是是', 'doubled_shi'),         # 不过是→只是是 — broken by cycle 28
+    (r'的地', 'mixed_de_di'),         # 系统性的+地 — broken by cycle 28
+    (r'可以地', 'awkward_keyi_di'),    # 能够有效→可以地 — broken by cycle 29
+    (r'有办法地', 'awkward_youbanfa_di'),  # cycle 29
+    (r'有效地能', 'inverted_youxiao_neng'),  # cycle 29
+    (r'跟进着', 'invalid_genjin_zhe'),  # invalid transition — cycle 29
+    (r'留着神', 'typo_liuzhe_shen'),    # cycle 27 typo
+    (r'在[一-鿿]{1,4}左右下', 'idiom_break_yingxiang_zuoyou'),  # cycle 23
+    (r'案[察觉识看][觉破察出]场', 'idiom_break_anfa_xianchang'),  # cycle 22
+)
+
+
+def count_quality_issues(text, source=None):
+    """Count residual 观感 violations in humanize output.
+
+    When source is provided, defect_count only counts patterns the humanize
+    pipeline introduced (so 'world's various places' → 世界各地的 doesn't
+    fire a 'mixed_de_di' for legitimate noun usage).
+    """
+    issues = {
         'reaction_fragments': sum(text.count(r) for r in _REACTION_FRAGMENTS),
         'first_person_intrusion': sum(text.count(p) for p in _FIRST_PERSON_INTRUSION),
     }
+    if source is not None:
+        defect_total = 0
+        for pattern, _ in _DEFECT_PATTERNS:
+            defect_total += _count_introduced(text, source, pattern)
+        issues['grammar_defects'] = defect_total
+    return issues
 
 
 def run_one_ai(sample, seed=42, best_of_n=0, humanize_style=None):
@@ -126,7 +162,7 @@ def run_one_ai(sample, seed=42, best_of_n=0, humanize_style=None):
     p_before = count_paragraphs(orig)
     p_after = count_paragraphs(humanized)
     length_ratio = len(humanized) / len(orig) if len(orig) else 0
-    quality = count_quality_issues(humanized)
+    quality = count_quality_issues(humanized, source=orig)
     return {
         'model': sample.get('model', '?'),
         'genre': sample.get('genre', '?'),
@@ -140,6 +176,7 @@ def run_one_ai(sample, seed=42, best_of_n=0, humanize_style=None):
         'length_ratio': length_ratio,
         'reaction_fragments': quality['reaction_fragments'],
         'first_person_intrusion': quality['first_person_intrusion'],
+        'grammar_defects': quality.get('grammar_defects', 0),
     }
 
 
@@ -235,6 +272,16 @@ def summarize(ai_results, human_results):
             'first_person_marker_count': sum(
                 r.get('first_person_intrusion', 0) for r in ai_results
             ),
+            # Grammar defects introduced by humanize relative to source.
+            # Hard-floor metric — these are bugs (doubled chars / typos /
+            # idiom corruption / invalid transitions). Should stay at 0
+            # after the cycle 22-29 J-path sweep.
+            'grammar_defects_count': sum(
+                r.get('grammar_defects', 0) for r in ai_results
+            ),
+            'grammar_defects_samples': sum(
+                1 for r in ai_results if r.get('grammar_defects', 0) > 0
+            ),
         },
         'by_genre': genre_summary,
         'by_model': model_summary,
@@ -263,6 +310,10 @@ def print_report(summary):
           f"1st-person={sh.get('first_person_marker_count', 0)} 处")
     print(f"  (narrative-heavy 观感 violations 已由 dialogue density guard 过滤；这些数字"
           f"主要反映 essay/academic/blog register-appropriate insertions)")
+    gd_count = sh.get('grammar_defects_count', 0)
+    gd_samples = sh.get('grammar_defects_samples', 0)
+    print(f"  grammar defects (humanize-introduced): {gd_count} 处 in {gd_samples} 样本"
+          f" {'✓' if gd_count == 0 else '⚠'}")
     print()
     print('── 按 genre ──')
     for g, s in sorted(summary['by_genre'].items()):

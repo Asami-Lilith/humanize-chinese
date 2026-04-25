@@ -134,10 +134,14 @@ def _build_templates():
     ))
 
     # ── 13. X是Y的重要/关键Z ── (W bounded by commas to avoid crossing clauses)
+    # W's last character is unconstrained, so any template suffix that starts
+    # with 地 (e.g. '地位') will double when W itself ends in 地 ('核心阵地'
+    # → '阵地地位'). Use suffixes that don't share their first char with
+    # common Z+W endings.
     templates.append((
         re.compile(r'(?P<X>[^，,。]{2,15})是(?P<Y>[^，,。]{2,12})的(?P<Z>重要|关键|核心|主要)(?P<W>[^，,。！？]{1,5})'),
         [
-            lambda m: f'对于{m.group("Y")}来说，{m.group("X")}的{m.group("W")}地位{m.group("Z").replace("重要","不可小觑").replace("关键","至关重要").replace("核心","居于核心").replace("主要","相当突出")}',
+            lambda m: f'就{m.group("Y")}而言，{m.group("X")}作为{m.group("W")}{m.group("Z").replace("重要","举足轻重").replace("关键","至关重要").replace("核心","不可或缺").replace("主要","相当突出")}',
         ]
     ))
 
