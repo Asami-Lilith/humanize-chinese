@@ -1100,19 +1100,31 @@ def vary_paragraph_rhythm(text):
     paragraphs = text.split('\n\n')
     if len(paragraphs) < 3:
         return text
-    
+
     lengths = [len(p) for p in paragraphs]
     avg_len = sum(lengths) / len(lengths) if lengths else 100
-    
+
+    def _is_md_header(p):
+        # Markdown headers ('# ', '## ', '### ' …) and synopsis bullets are
+        # short paragraphs by intent; merging them collapses document
+        # structure (sample 63 of longform corpus: a tech blog with 62
+        # 段落 incl. ## headers had 8 paragraphs lost when this function
+        # treated headers as just short text).
+        s = p.lstrip()
+        return s.startswith('#') or s.startswith('- ') or s.startswith('* ')
+
     result = []
     i = 0
     while i < len(paragraphs):
         para = paragraphs[i]
-        
-        # Randomly merge short adjacent paragraphs
+
+        # Randomly merge short adjacent paragraphs (skip markdown headers /
+        # bullet items — those are deliberately short structural markers).
         if (i + 1 < len(paragraphs) and
             len(para) < avg_len * 0.6 and
             len(paragraphs[i + 1]) < avg_len * 0.6 and
+            not _is_md_header(para) and
+            not _is_md_header(paragraphs[i + 1]) and
             random.random() < 0.4):
             merged = para + '\n' + paragraphs[i + 1]
             result.append(merged)

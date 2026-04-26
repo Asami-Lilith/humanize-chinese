@@ -528,27 +528,37 @@ def split_long_sentences(text):
             result.append(segment)
             continue
 
+        # Paragraph guard: skip splits whose match span includes a \n\n
+        # boundary, AND preserve any segment content before/after the match
+        # span — older code replaced the entire segment with
+        # f"{before}。{after}", silently dropping leading "\n\n###
+        # header\n\n- bullet:" prefixes. Sample 608 of longform corpus
+        # collapsed 13 paragraphs to 11 from this. Same family of bug as
+        # the cycle-1 humanize_cn .strip() fix.
         # 尝试在"不仅...还/也"处拆分
         # before 必须是短的无内部逗号的主语（2-10 中文字），否则拆分会把整段复制。
         # 例：避免 "智能评估系统能够多维度地评判学生的综合素质，不仅..." 被当作 before 整段复制。
         m = re.search(r'(?P<before>[\u4e00-\u9fff]{2,10})不仅(?P<A>[^，,。]{2,25})[，,]\s*(?:还|也|更)(?P<B>.+)', segment)
-        if m and random.random() < 0.5:
+        if m and random.random() < 0.5 and '\n\n' not in m.group(0):
             # 确认 match 起始就是 before（即 before 前面没有其它句子内容，是真正的主语位）
             if m.start() == 0 or segment[m.start() - 1] in '，。！？':
                 subj = m.group('before').strip()
-                result.append(f'{subj}不仅{m.group("A")}。{subj}{m.group("B").strip()}')
+                replaced = f'{subj}不仅{m.group("A")}。{subj}{m.group("B").strip()}'
+                result.append(segment[:m.start()] + replaced + segment[m.end():])
                 continue
 
         # 尝试在"，同时/并且/而且"处拆分
         m = re.search(r'(?P<before>.+?)[，,]\s*(?:同时|并且|而且)(?P<after>.+)', segment)
-        if m and cn_len > 30 and random.random() < 0.4:
-            result.append(f'{m.group("before").strip()}。{m.group("after").strip()}')
+        if m and cn_len > 30 and random.random() < 0.4 and '\n\n' not in m.group(0):
+            replaced = f'{m.group("before").strip()}。{m.group("after").strip()}'
+            result.append(segment[:m.start()] + replaced + segment[m.end():])
             continue
 
         # 尝试在"，从而/进而"处拆分
         m = re.search(r'(?P<before>.+?)[，,]\s*(?:从而|进而)(?P<after>.+)', segment)
-        if m and cn_len > 30 and random.random() < 0.4:
-            result.append(f'{m.group("before").strip()}。这样一来，{m.group("after").strip()}')
+        if m and cn_len > 30 and random.random() < 0.4 and '\n\n' not in m.group(0):
+            replaced = f'{m.group("before").strip()}。这样一来，{m.group("after").strip()}'
+            result.append(segment[:m.start()] + replaced + segment[m.end():])
             continue
 
         result.append(segment)
