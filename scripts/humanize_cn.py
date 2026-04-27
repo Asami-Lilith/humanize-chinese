@@ -182,12 +182,14 @@ WORD_SYNONYMS = {
     '使用': ['运用', '采用', '用', '动用'],
     '具有': ['带有', '拥有', '含有', '具备'],
     '导致': ['引发', '造成', '招致', '引起'],
-    # Cycle 63: dropped '拿出' — physical / colloquial register (literally
-    # 'take out'). Audit on 170 longform samples found 38 humanize-introduced
-    # cases where '提供' got rewritten as '拿出' in formal contexts ("难以
-    # 向患者拿出充分的解释" / "拿出了极高的安全性保障" / "拿出了新的机遇")
-    # — '提供' is conceptual/abstract, '拿出' is concrete/physical.
-    '提供': ['给出', '供给', '呈上'],
+    # Cycle 63: dropped '拿出' (physical/colloquial register).
+    # Cycle 65: dropped '供给' — '供给' carries an economics-supply sense
+    # (goods/resources), not the conceptual '提供 解释/思路/借鉴' sense.
+    # Audit on 170 samples found 76 humanize-introduced 供给 cases across
+    # all genres ("无法供给清晰的推理路径" / "供给代码示例" / "供给精神
+    # 食粮" / "供给一面思考的镜子"). Added '给予' (grant/give) which works
+    # in abstract conceptual contexts.
+    '提供': ['给出', '呈上', '给予'],
     '分析': ['剖析', '解读', '拆解', '审视'],
     '促进': ['推动', '助推', '带动', '催动'],
     '利用': ['借用', '运用', '动用', '凭借'],
