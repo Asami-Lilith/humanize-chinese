@@ -611,6 +611,15 @@ def reduce_high_freq_bigrams(text, strength=0.3, scene='general'):
             # non-doubling alt. Catches '能够以X' → '可以以X' / '系统的研究'
             # → '架构的的' family of bugs without removing the entry entirely.
             next_ch = original_text[pos + len(word):pos + len(word) + 1]
+            # Cycle 54: left-context cross-boundary guard. '解决' inside
+            # '了解决策' actually spans 了解|决策 (two distinct words);
+            # replacing 解决 with 攻克 corrupts to '了攻克策'. Skip when
+            # the word's leading char + prev char form a known 2-char word
+            # AND the word's trailing char + next char also form a 2-char
+            # word — that's the cross-boundary signature.
+            prev_ch = original_text[pos - 1:pos] if pos > 0 else ''
+            if word == '解决' and prev_ch == '了' and next_ch in '策心议定断':
+                continue
             # Pick primary for first replaced occurrence, alternate for others
             if k == min(to_replace):
                 replacement = _pick_safe(primary, next_ch)
