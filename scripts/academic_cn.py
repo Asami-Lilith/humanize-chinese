@@ -740,7 +740,12 @@ except ImportError:
 _USE_NOISE = True
 
 HEDGING_INJECTIONS = [
-    '在一定程度上', '从某种角度看', '初步来看', '大体上',
+    # Cycle 76: dropped '在一定程度上' — it is in detect_cn's hedging_language
+    # detection AND the high-signal ai_high_freq_words pattern, so injecting
+    # it as a humanize hedge actually raises the AI score (self-defeating).
+    # The remaining entries are kept for diversity even though most are
+    # zero-freq in human corpus; they still vary the surface form.
+    '从某种角度看', '初步来看', '大体上',
     '就目前而言', '在多数情况下', '就现有研究来看',
     '从目前的情况看', '在一定条件下', '大致可以认为',
 ]
