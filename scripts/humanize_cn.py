@@ -217,7 +217,12 @@ WORD_SYNONYMS = {
     # as a finite verb where surrounding 2-char windows already vary).
     '推动': ['驱动', '助推', '催动', '拉动'],
     '加强': ['强化', '增强', '夯实', '巩固'],
-    '体现': ['彰显', '凸显', '映射', '折射'],
+    # Cycle 78: dropped '彰显' / '凸显' — both are in detect_cn's
+    # ai_high_freq_words pattern (weight 6), so injecting them as humanize
+    # alts for '体现' raises the AI score (self-defeating, same family
+    # as cycles 76/77). Added '反映' which is a synonym in the same
+    # semantic neighborhood without being an AI-flagged term.
+    '体现': ['映射', '折射', '反映'],
     '满足': ['达到', '契合', '符合', '迎合'],
     # '存在' removed: substring matches across word boundaries like 留存+在
     # → 留存有 which breaks the 留存 compound. Too error-prone without
