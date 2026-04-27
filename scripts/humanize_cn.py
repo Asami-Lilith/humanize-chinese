@@ -182,7 +182,12 @@ WORD_SYNONYMS = {
     '使用': ['运用', '采用', '用', '动用'],
     '具有': ['带有', '拥有', '含有', '具备'],
     '导致': ['引发', '造成', '招致', '引起'],
-    '提供': ['给出', '供给', '拿出', '呈上'],
+    # Cycle 63: dropped '拿出' — physical / colloquial register (literally
+    # 'take out'). Audit on 170 longform samples found 38 humanize-introduced
+    # cases where '提供' got rewritten as '拿出' in formal contexts ("难以
+    # 向患者拿出充分的解释" / "拿出了极高的安全性保障" / "拿出了新的机遇")
+    # — '提供' is conceptual/abstract, '拿出' is concrete/physical.
+    '提供': ['给出', '供给', '呈上'],
     '分析': ['剖析', '解读', '拆解', '审视'],
     '促进': ['推动', '助推', '带动', '催动'],
     '利用': ['借用', '运用', '动用', '凭借'],
@@ -1352,7 +1357,7 @@ def diversify_vocabulary(text):
     diversity_map = {
         '进行': ['做', '开展', '实施', '推进'],
         '实现': ['达到', '做到', '完成'],
-        '提供': ['给出', '带来', '拿出'],
+        '提供': ['给出', '带来'],  # Cycle 63: dropped 拿出 (see WORD_SYNONYMS comment)
         '具有': ['有', '拥有', '带有'],
         '进一步': ['更', '再', '深入'],
         '不断': ['持续', '一直', '始终'],
