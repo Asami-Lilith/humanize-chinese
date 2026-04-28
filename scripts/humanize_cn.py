@@ -155,8 +155,9 @@ WORD_SYNONYMS = {
     # ── 逻辑连接 / 转折 ──
     # Cycle 95: dropped '所以' (logic_connectors w=7 self-defeat).
     '因此': ['因而', '为此', '故而'],
-    '然而': ['不过', '但', '可是', '只是'],
-    '但是': ['不过', '可是', '只是', '然而'],
+    # Cycle 97: dropped '不过' from both — logic_connectors w=7 self-defeat.
+    '然而': ['但', '可是', '只是'],
+    '但是': ['可是', '只是', '然而'],
     '虽然': ['尽管', '即便', '就算', '纵然'],
     # Cycle 96: dropped '因此' (logic_connectors w=7 self-defeat — replacing
     # 所以 with 因此 just trades one detected connector for another).
