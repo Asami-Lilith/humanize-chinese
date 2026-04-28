@@ -1569,7 +1569,15 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
         # substitutions + transition cap + paraphrase replacement for delta
         # in novel mode instead.
         if style != 'novel':
-            text = inject_noise_expressions(text, density=noise_density, style='general')
+            # Cycle 104: route academic scene through NOISE_ACADEMIC_EXPRESSIONS
+            # subset (hedging / self_correction / uncertainty). Cycle 54 tried
+            # this and lost -2 academic hero, but cycles 76-101 since cleaned
+            # the pool of self-defeating entries — second attempt with the
+            # tighter pool. Audit found 20+ filler / transition_casual /
+            # personal injections in academic samples ('不瞒你说' / '说到底' /
+            # '讲真' / '约莫' / '估摸着') that read off-register.
+            noise_style = 'academic' if scene == 'academic' else 'general'
+            text = inject_noise_expressions(text, density=noise_density, style=noise_style)
         text = randomize_sentence_lengths(text, aggressive=aggressive, seed=seed)
     
     # Final transition cap — AI overuses 首先/然而/此外/因此 etc, detect fires
