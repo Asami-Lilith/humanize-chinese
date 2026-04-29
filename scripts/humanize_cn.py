@@ -812,6 +812,19 @@ def randomize_sentence_lengths(text, aggressive=False, seed=None):
             if comma_pos > 5 and comma_pos < len(s) - 5:
                 first_part = s[:comma_pos]
                 first_stripped = first_part.lstrip()
+                # Guard 0: don't truncate when the first_part fragment after the
+                # last paragraph break is too short. The [。！？] split doesn't
+                # respect \n\n, so a segment can span "## header\n\n现在，X..."
+                # — truncating yields "## header\n\n现在。X..." stranding a
+                # 2-char fragment after the section header.
+                last_nl = first_part.rfind('\n')
+                if last_nl >= 0:
+                    tail_cn = len(re.findall(r'[一-鿿]',
+                                             first_part[last_nl + 1:]))
+                    if tail_cn < 3:
+                        result.append(s + p)
+                        i += 1
+                        continue
                 # Guard 1: skip if first part ends in an attribution/reporting verb.
                 # Otherwise "X 指出，" becomes "X 指出。" + bare clause — broken grammar.
                 _attribution_suffixes = (
@@ -1146,14 +1159,28 @@ def split_long_sentences(text, max_len=80):
                 (m.start(), m.group()) for m in
                 re.finditer(r'[，,](但是|不过|然而|同时|而且|所以|因此|另外)', sent)
             ]
-            
+
+            def _tail_too_short(part):
+                # Skip splits that would strand a tiny fragment after the most
+                # recent paragraph/line break. Sentences split by [。！？] can
+                # span "## header\n\nX，Y" so a comma-split produces broken
+                # "## header\n\nX。Y" output.
+                last_nl = part.rfind('\n')
+                if last_nl < 0:
+                    return False
+                tail_cn = len(re.findall(r'[一-鿿]', part[last_nl + 1:]))
+                return tail_cn < 3
+
             if split_points:
                 # Split at the most central point
                 mid = len(sent) // 2
                 best = min(split_points, key=lambda x: abs(x[0] - mid))
                 part1 = sent[:best[0]]
                 part2 = sent[best[0]+1:]  # Skip the comma
-                result.append(part1 + '。' + part2 + punct)
+                if _tail_too_short(part1):
+                    result.append(sent + punct)
+                else:
+                    result.append(part1 + '。' + part2 + punct)
             else:
                 # Split at a comma near the middle
                 commas = [m.start() for m in re.finditer(r'[，,]', sent)]
@@ -1162,7 +1189,10 @@ def split_long_sentences(text, max_len=80):
                     best_comma = min(commas, key=lambda x: abs(x - mid))
                     part1 = sent[:best_comma]
                     part2 = sent[best_comma+1:]
-                    result.append(part1 + '。' + part2 + punct)
+                    if _tail_too_short(part1):
+                        result.append(sent + punct)
+                    else:
+                        result.append(part1 + '。' + part2 + punct)
                 else:
                     result.append(sent + punct)
         else:
