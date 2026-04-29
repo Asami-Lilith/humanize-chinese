@@ -895,6 +895,83 @@ def _boost_one_para_via_merge(para, target_cv):
     return ''.join(s + p for s, p in pairs)
 
 
+_PARA_INTERJECTION_NEUTRAL = (
+    '此点尚需进一步思考，简单的结论未必能完全成立。',
+    '事情可能并不如表面所示那般简单，需要更细致地审视。',
+    '此种情形值得深入分析，单一视角恐怕难以全面把握。',
+    '若从更多角度去考虑，结论恐怕会有不少不同之处。',
+    '换个角度去看也成立，问题的另一面同样不容忽视。',
+    '相关因素并非完全独立，需要综合考虑各方面的影响。',
+    '若进一步探讨这一问题，答案恐怕并非如此唯一确定。',
+    '仔细推敲就会发现，结论的成立有其特定前提条件。',
+)
+
+
+def insert_short_interjection_paragraph(text, target_cv=0.50, style=None,
+                                        seed=None):
+    """v5 P1.2 humanize counter-measure for paragraph_length_cv (d=-1.49).
+
+    For multi-paragraph text whose paragraph-length CV is below target,
+    insert a single short interjection paragraph (7-9 cn chars) AFTER
+    one of the longer existing paragraphs (top quartile by length).
+    The interjection sharply lifts paragraph-length variance without
+    restructuring existing paragraphs (cycle 28 lesson: split/merge of
+    existing paragraphs has persistently negative ROI; this function
+    only adds, never restructures).
+
+    Skips:
+      - Single-paragraph text
+      - Novel style (narrative paragraphs read differently; reflective
+        interjections would feel off-register)
+      - Text already varied (CV >= target)
+      - When adjacent paragraph is a markdown header / list / bold
+        subheader (would split a structural pair)
+    """
+    if seed is not None:
+        random.seed(seed)
+
+    if style == 'novel':
+        return text
+
+    paragraphs = text.split('\n\n')
+    if len(paragraphs) < 4:
+        return text
+
+    lens = [len(re.findall(r'[一-鿿]', p)) for p in paragraphs]
+    valid_pairs = [(i, l) for i, l in enumerate(lens) if l >= 20]
+    if len(valid_pairs) < 3:
+        return text
+    valid_lens = [l for _, l in valid_pairs]
+    m = sum(valid_lens) / len(valid_lens)
+    if m == 0:
+        return text
+    var = sum((l - m) ** 2 for l in valid_lens) / len(valid_lens)
+    cv = (var ** 0.5) / m
+
+    if cv >= target_cv:
+        return text
+
+    sorted_pairs = sorted(valid_pairs, key=lambda x: -x[1])
+    top_count = max(2, len(valid_pairs) // 4)
+    top_indices = [i for i, _ in sorted_pairs[:top_count]]
+
+    insert_after = random.choice(top_indices)
+    next_idx = insert_after + 1
+    if next_idx < len(paragraphs):
+        next_lstrip = paragraphs[next_idx].lstrip()
+        if (next_lstrip.startswith('#') or next_lstrip.startswith('- ') or
+                next_lstrip.startswith('* ') or
+                (next_lstrip.startswith('**') and
+                 next_lstrip.rstrip().endswith('**'))):
+            return text
+
+    interjection = random.choice(_PARA_INTERJECTION_NEUTRAL)
+
+    new_paragraphs = list(paragraphs)
+    new_paragraphs.insert(next_idx, interjection)
+    return '\n\n'.join(new_paragraphs)
+
+
 def boost_para_cv_via_merge(text, target_cv=0.40):
     """v5 P1 humanize counter-measure (merge variant).
 
@@ -1831,6 +1908,18 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
     # both of which point LR away from AI. n=20 sweep at target=0.40
     # showed avg LR delta -0.95 with zero regressions.
     text = boost_para_cv_via_merge(text)
+
+    # v5 P1.2 humanize counter-measure for paragraph_length_cv (LR coef
+    # -1.99 on longform). For multi-paragraph text whose paragraph
+    # length CV is below 0.60, insert a single 22-24 cn-char reflection
+    # paragraph after one of the longer existing paragraphs. Skipped
+    # for novel style (narrative paragraphs differ; reflective
+    # interjections read off-register). n=30 by-genre sweep:
+    #   novel    skipped 10/10 ✓
+    #   academic fired 4/10, LR delta 0.00 (neutral)
+    #   news     fired 10/10, LR avg -2.10 (3 down / 1 up / 6 same)
+    text = insert_short_interjection_paragraph(text, target_cv=0.60,
+                                               style=style, seed=seed)
 
     # Final transition cap — AI overuses 首先/然而/此外/因此 etc, detect fires
     # density > 8/1000 chars. Cap at 6 to leave margin. Preserves text that's
