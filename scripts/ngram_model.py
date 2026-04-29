@@ -968,6 +968,60 @@ def compute_entropy_uniformity(text):
     }
 
 
+def compute_cross_para_3gram_repeat(text):
+    """
+    Fraction of character trigrams appearing in 2 or more paragraphs.
+
+    AI long-form keeps a tight vocabulary across paragraphs (topic
+    sticks); human long-form drifts naturally, so the same trigram is
+    less likely to recur in a different paragraph.
+
+    v5 calibration n=50 longform vs novel/news (2026-04-29):
+      AI mean 0.064, Human mean 0.018, Cohen's d = +1.13
+
+    Returns:
+        dict with:
+          - ratio: fraction of unique trigrams that appear in >=2 paragraphs
+          - n_trigrams: total unique trigrams across the document
+          - n_paragraphs: paragraphs counted (>=20 cn chars)
+    """
+    raw = re.split(r'\n\s*\n', text)
+    paragraphs = [p.strip() for p in raw
+                  if p.strip() and len(_extract_chinese(p.strip())) >= 20]
+
+    if len(paragraphs) < 3:
+        return {
+            'ratio': 0.0,
+            'n_trigrams': 0,
+            'n_paragraphs': len(paragraphs),
+        }
+
+    para_grams = []
+    for p in paragraphs:
+        chars = _extract_chinese(p)
+        grams = set()
+        for i in range(len(chars) - 2):
+            grams.add(''.join(chars[i:i+3]))
+        para_grams.append(grams)
+
+    all_grams = set().union(*para_grams)
+    if not all_grams:
+        return {
+            'ratio': 0.0,
+            'n_trigrams': 0,
+            'n_paragraphs': len(paragraphs),
+        }
+
+    repeated = sum(1 for g in all_grams
+                   if sum(1 for pg in para_grams if g in pg) >= 2)
+
+    return {
+        'ratio': repeated / len(all_grams),
+        'n_trigrams': len(all_grams),
+        'n_paragraphs': len(paragraphs),
+    }
+
+
 def compute_paragraph_length_cv(text):
     """
     Coefficient of variation of paragraph lengths (Chinese-char count).
@@ -1133,6 +1187,12 @@ def analyze_text(text):
     # threshold.
     para_lcv = compute_paragraph_length_cv(text)
 
+    # Cross-paragraph trigram repetition (v5 P1.3 cycle 137, longform
+    # calibration d = +1.13). AI long-form sticks to a tight topic
+    # vocabulary across paragraphs; humans drift, so the same trigram
+    # is less likely to recur in a different paragraph.
+    cross_p3 = compute_cross_para_3gram_repeat(text)
+
     # DivEye surprisal features — reuse log_probs from compute_perplexity
     diveye = compute_diveye_features(ppl_result.get('log_probs', []))
 
@@ -1297,6 +1357,7 @@ def analyze_text(text):
         'char_mattr': char_mattr,
         'para_slcv': para_slcv,
         'para_lcv': para_lcv,
+        'cross_p3': cross_p3,
         'uni_ppl': uni_ppl,
         'uni_tri_ratio': uni_tri_ratio,
         'indicators': indicators,
@@ -1348,6 +1409,7 @@ LR_FEATURE_NAMES = (
     'news_vs_human',        # F-11 2026-04-22, HC3 d=1.20 (on 10-category news corpus)
     'para_sent_len_cv_avg', # v5 P1 2026-04-29, longform d=-2.08 (multi-paragraph only)
     'paragraph_length_cv',  # v5 P1.2 2026-04-29, longform d=-1.49 (multi-paragraph only)
+    'cross_para_3gram_repeat',  # v5 P1.3 2026-04-29, longform d=+1.13 (multi-paragraph only)
 )
 
 
@@ -1473,6 +1535,7 @@ def extract_feature_vector(text_or_analysis):
     news = analysis.get('news', {}) or {}
     para_slcv = analysis.get('para_slcv', {}) or {}
     para_lcv = analysis.get('para_lcv', {}) or {}
+    cross_p3 = analysis.get('cross_p3', {}) or {}
 
     vec = [
         float(analysis.get('perplexity') or 0.0),
@@ -1499,6 +1562,7 @@ def extract_feature_vector(text_or_analysis):
         float(news.get('news_vs_human') or 0.0),
         float(para_slcv.get('mean_cv') or 0.0),
         float(para_lcv.get('cv') or 0.0),
+        float(cross_p3.get('ratio') or 0.0),
     ]
     return vec, list(LR_FEATURE_NAMES)
 
