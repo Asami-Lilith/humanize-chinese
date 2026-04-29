@@ -744,6 +744,110 @@ def _simple_synonym_pass(text, strength=0.3, scene='general'):
 #  Strategy 2: Sentence length randomization
 # ═══════════════════════════════════════════════════════════════════
 
+_PARA_BOOST_ATTRIBUTION = (
+    '指出', '表明', '认为', '揭示', '发现', '显示', '提出',
+    '说', '称', '讲', '强调', '主张', '断言',
+)
+_PARA_BOOST_SUBORDINATE = (
+    '随着', '鉴于', '为了', '由于', '尽管', '虽然',
+    '如果', '假如', '若是', '倘若', '要是', '即便', '纵然',
+    '除了', '除非', '只要', '只有', '无论', '不管',
+    '当', '每当', '一旦',
+)
+_PARA_BOOST_BARE_CONTINUATOR = (
+    '使得', '使', '导致', '引起', '造成', '致使',
+)
+
+
+def _boost_one_paragraph_cv(para, target_cv):
+    """Truncate the longest sentence at first comma if paragraph-internal
+    sentence-length CV is below target. Reuses guards from
+    randomize_sentence_lengths Strategy B."""
+    cn_count = len(re.findall(r'[一-鿿]', para))
+    if cn_count < 60:
+        return para
+
+    parts = re.split(r'([。！？])', para)
+    pairs = []
+    for i in range(0, len(parts) - 1, 2):
+        s = parts[i]
+        p = parts[i + 1] if i + 1 < len(parts) else ''
+        if s.strip():
+            pairs.append([s, p])
+    if len(parts) % 2 == 1 and parts[-1].strip():
+        pairs.append([parts[-1], ''])
+
+    if len(pairs) < 3:
+        return para
+
+    lens = [len(re.findall(r'[一-鿿]', s)) for s, _ in pairs]
+    valid = [(i, l) for i, l in enumerate(lens) if l >= 5]
+    if len(valid) < 3:
+        return para
+    vl = [l for _, l in valid]
+    m = sum(vl) / len(vl)
+    if m == 0:
+        return para
+    var = sum((l - m) ** 2 for l in vl) / len(vl)
+    cv = (var ** 0.5) / m
+
+    if cv >= target_cv:
+        return para
+
+    long_idx = max(range(len(pairs)), key=lambda i: lens[i])
+    long_s, long_p = pairs[long_idx]
+    if lens[long_idx] < 18:
+        return para
+
+    comma_pos = long_s.find('，')
+    if comma_pos < 0:
+        return para
+    first_part = long_s[:comma_pos]
+    rest_part = long_s[comma_pos + 1:]
+    if (len(re.findall(r'[一-鿿]', first_part)) < 8 or
+            len(re.findall(r'[一-鿿]', rest_part)) < 8):
+        return para
+
+    first_stripped = first_part.lstrip()
+    last_nl = first_part.rfind('\n')
+    if last_nl >= 0:
+        tail_cn = len(re.findall(r'[一-鿿]',
+                                 first_part[last_nl + 1:]))
+        if tail_cn < 3:
+            return para
+
+    if first_part.endswith(_PARA_BOOST_ATTRIBUTION):
+        return para
+    if first_stripped.startswith(_PARA_BOOST_SUBORDINATE):
+        return para
+    if rest_part.lstrip().startswith(_PARA_BOOST_BARE_CONTINUATOR):
+        return para
+
+    pairs[long_idx] = [first_part, '。']
+    pairs.insert(long_idx + 1, [rest_part, long_p or '。'])
+    return ''.join(s + p for s, p in pairs)
+
+
+def boost_para_sent_len_cv(text, target_cv=0.40):
+    """v5 P1 humanize counter-measure for stat_low_para_sent_len_cv (d=-2.08).
+
+    For each paragraph (>=60 cn chars, >=3 sentences) where internal
+    sentence-length CV is below target, truncate the longest sentence
+    at its first comma so the paragraph contains at least one short
+    sentence among its mediums. Single pass — does not iterate.
+
+    Skips short paragraphs and applies the same guards as
+    randomize_sentence_lengths Strategy B (attribution verbs, subordinate
+    clause heads, bare causative continuators, paragraph-break tail).
+    """
+    paragraphs = text.split('\n\n')
+    if len(paragraphs) < 2:
+        # Single-paragraph text — signal doesn't apply.
+        return text
+    return '\n\n'.join(_boost_one_paragraph_cv(p, target_cv)
+                       for p in paragraphs)
+
+
 def randomize_sentence_lengths(text, aggressive=False, seed=None):
     """
     策略2: 刻意制造不均匀的句子长度分布。
@@ -1631,7 +1735,14 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
             noise_style = 'academic' if scene == 'academic' else 'general'
             text = inject_noise_expressions(text, density=noise_density, style=noise_style)
         text = randomize_sentence_lengths(text, aggressive=aggressive, seed=seed)
-    
+
+    # v5 P1 humanize counter-measure for stat_low_para_sent_len_cv lives in
+    # boost_para_sent_len_cv. Pipeline integration deferred: a 20-sample
+    # threshold sweep showed truncating one long sentence per paragraph
+    # injects a period whose punct_density LR contribution (+1.556) cancels
+    # the para CV LR contribution (-0.339). Function kept for future
+    # iteration with a merge-based or short-injection mechanism.
+
     # Final transition cap — AI overuses 首先/然而/此外/因此 etc, detect fires
     # density > 8/1000 chars. Cap at 6 to leave margin. Preserves text that's
     # already under the threshold.
