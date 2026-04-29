@@ -1007,31 +1007,47 @@ _PARA_INTERJECTION_NEUTRAL = (
 )
 
 
+# Narrative-voice variants for novel style — character-internal / group
+# beats only. Setting-specific lines (time-of-day, indoor / outdoor,
+# weather) are deliberately excluded so the inserted paragraph doesn't
+# contradict the surrounding scene state. Each is >=20 cn chars to pass
+# the >=20 paragraph filter used by compute_paragraph_length_cv.
+_PARA_INTERJECTION_NOVEL = (
+    '众人都不约而同地陷入了一阵短暂的压抑沉默。',
+    '他抬起头来，目光缓缓扫过众人脸上的神色一遍。',
+    '他转过头去，目光在某处停留了片刻又缓缓移开。',
+    '时间仿佛在这一刻悄然凝固住了，没有人开口说话。',
+    '他心中暗暗思量了一阵子，事情似乎并不那么简单。',
+    '气氛变得有些紧张了起来，众人之间默然不语好一会。',
+    '他皱了皱眉头，似乎在心里反复斟酌着什么内容不解。',
+    '他眯起了眼，神色之中流露出一种难以言喻的情绪。',
+)
+
+
 def insert_short_interjection_paragraph(text, target_cv=0.50, style=None,
                                         seed=None):
     """v5 P1.2 humanize counter-measure for paragraph_length_cv (d=-1.49).
 
     For multi-paragraph text whose paragraph-length CV is below target,
-    insert a single short interjection paragraph (7-9 cn chars) AFTER
+    insert a single short interjection paragraph (~20-22 cn chars) AFTER
     one of the longer existing paragraphs (top quartile by length).
     The interjection sharply lifts paragraph-length variance without
     restructuring existing paragraphs (cycle 28 lesson: split/merge of
     existing paragraphs has persistently negative ROI; this function
     only adds, never restructures).
 
+    Two pools, picked by style:
+      - novel  : narrative beats (atmosphere / action / dialogue gap)
+      - other  : reflective neutral-formal sentences
+
     Skips:
       - Single-paragraph text
-      - Novel style (narrative paragraphs read differently; reflective
-        interjections would feel off-register)
       - Text already varied (CV >= target)
       - When adjacent paragraph is a markdown header / list / bold
         subheader (would split a structural pair)
     """
     if seed is not None:
         random.seed(seed)
-
-    if style == 'novel':
-        return text
 
     paragraphs = text.split('\n\n')
     if len(paragraphs) < 4:
@@ -1065,7 +1081,9 @@ def insert_short_interjection_paragraph(text, target_cv=0.50, style=None,
                  next_lstrip.rstrip().endswith('**'))):
             return text
 
-    interjection = random.choice(_PARA_INTERJECTION_NEUTRAL)
+    pool = _PARA_INTERJECTION_NOVEL if style == 'novel' \
+        else _PARA_INTERJECTION_NEUTRAL
+    interjection = random.choice(pool)
 
     new_paragraphs = list(paragraphs)
     new_paragraphs.insert(next_idx, interjection)
