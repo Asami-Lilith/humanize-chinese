@@ -848,6 +848,18 @@ def randomize_sentence_lengths(text, aggressive=False, seed=None):
                     result.append(s + p)
                     i += 1
                     continue
+                # Guard 3: skip if next clause starts with a bare causative
+                # verb (使/使得/导致/造成 etc.). "X，使得Y" → "X。使得Y" is
+                # ungrammatical because 使得 needs a subject from the previous
+                # clause to remain intact.
+                _bare_continuators = (
+                    '使得', '使', '导致', '引起', '造成', '致使',
+                )
+                rest_after_comma = s[comma_pos + 1:].lstrip()
+                if rest_after_comma.startswith(_bare_continuators):
+                    result.append(s + p)
+                    i += 1
+                    continue
                 rest_part = s[comma_pos + 1:]
                 result.append(first_part + p)
                 # Push the rest as a new "sentence" to be processed
@@ -1182,8 +1194,18 @@ def split_long_sentences(text, max_len=80):
                 else:
                     result.append(part1 + '。' + part2 + punct)
             else:
-                # Split at a comma near the middle
-                commas = [m.start() for m in re.finditer(r'[，,]', sent)]
+                # Split at a comma near the middle. Filter commas whose
+                # following clause starts with a bare causative verb
+                # (使得/导致/etc.) — splitting there yields "X。使得Y" which
+                # strands a subject-less verb.
+                _bare_continuators = (
+                    '使得', '使', '导致', '引起', '造成', '致使',
+                )
+                def _safe_comma(idx):
+                    rest = sent[idx + 1:].lstrip()
+                    return not rest.startswith(_bare_continuators)
+                commas = [m.start() for m in re.finditer(r'[，,]', sent)
+                          if _safe_comma(m.start())]
                 if commas:
                     mid = len(sent) // 2
                     best_comma = min(commas, key=lambda x: abs(x - mid))
