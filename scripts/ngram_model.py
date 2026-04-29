@@ -968,6 +968,69 @@ def compute_entropy_uniformity(text):
     }
 
 
+def compute_para_sent_len_cv(text):
+    """
+    Mean of per-paragraph sentence-length CV.
+
+    For each paragraph (>=3 sentences), compute the coefficient of variation
+    of Chinese-character sentence lengths within that paragraph. Take the
+    mean across paragraphs.
+
+    AI text: paragraph-internal sentences are uniform in length (low avg CV)
+    Human text: paragraph-internal sentences vary (high avg CV)
+
+    v5 calibration n=50 longform AI vs novel/news Human (2026-04-29):
+      AI mean 0.288, Human mean 0.485, Cohen's d = -2.08
+
+    Complement to global sent_len_cv (which is whole-doc sentence CV, d=1.22
+    on HC3 short Q&A): captures paragraph-internal monotony that a global
+    CV averages out when paragraphs span different registers.
+
+    Returns:
+        dict with:
+          - mean_cv: mean of per-paragraph sentence-length CVs
+          - n_paragraphs_used: paragraphs that had >=3 sentences
+          - n_paragraphs_total: total paragraph count after min-len filter
+    """
+    raw_paras = re.split(r'\n\s*\n', text)
+    paragraphs = [p.strip() for p in raw_paras
+                  if p.strip() and len(_extract_chinese(p.strip())) >= 30]
+
+    if len(paragraphs) < 3:
+        return {
+            'mean_cv': 0.0,
+            'n_paragraphs_used': 0,
+            'n_paragraphs_total': len(paragraphs),
+        }
+
+    cvs = []
+    for p in paragraphs:
+        parts = re.split(r'[。！？]', p)
+        sents = [s.strip() for s in parts
+                 if s.strip() and len(_extract_chinese(s.strip())) >= 5]
+        if len(sents) < 3:
+            continue
+        sl = [len(_extract_chinese(s)) for s in sents]
+        m = sum(sl) / len(sl)
+        if m == 0:
+            continue
+        var = sum((l - m) ** 2 for l in sl) / len(sl)
+        cvs.append((var ** 0.5) / m)
+
+    if len(cvs) < 2:
+        return {
+            'mean_cv': 0.0,
+            'n_paragraphs_used': len(cvs),
+            'n_paragraphs_total': len(paragraphs),
+        }
+
+    return {
+        'mean_cv': sum(cvs) / len(cvs),
+        'n_paragraphs_used': len(cvs),
+        'n_paragraphs_total': len(paragraphs),
+    }
+
+
 # ─── Combined Analysis ───
 
 def analyze_text(text):
@@ -1009,6 +1072,10 @@ def analyze_text(text):
 
     # Entropy uniformity
     ent_result = compute_entropy_uniformity(text)
+
+    # Per-paragraph sentence-length CV averaged (v5 P1 cycle 131,
+    # longform calibration d = -2.08)
+    para_slcv = compute_para_sent_len_cv(text)
 
     # DivEye surprisal features — reuse log_probs from compute_perplexity
     diveye = compute_diveye_features(ppl_result.get('log_probs', []))
@@ -1067,6 +1134,8 @@ def analyze_text(text):
     ent_cv = ent_result['entropy_cv']
     n_windows = burst_result['n_windows']
     n_paras = ent_result['n_paragraphs']
+    para_slcv_mean = para_slcv['mean_cv']
+    para_slcv_n = para_slcv['n_paragraphs_used']
 
     # DivEye thresholds calibrated on 100-pair HC3-Chinese sample (Cohen's d > 0.25):
     #   Feature          human_median   ai_median   Cohen_d
@@ -1146,6 +1215,13 @@ def analyze_text(text):
         # 40-pt stat cap. Kept function + metric + wiring for future Ghostbuster
         # LR ensemble; indicator disabled for now like binoculars/curvature.
         'low_char_mattr': False,
+        # Per-paragraph sentence-length CV averaged (v5 P1 cycle 131,
+        # calibration 2026-04-29 n=50 longform: AI mean 0.288,
+        # Human mean 0.485, Cohen's d = -2.08). Threshold 0.35 between
+        # the two means; requires >=2 paragraphs with >=3 sentences each.
+        'low_para_sent_len_cv': (
+            para_slcv_mean > 0 and para_slcv_mean < 0.35 and para_slcv_n >= 2
+        ),
     }
 
     return {
@@ -1163,6 +1239,7 @@ def analyze_text(text):
         'wiki': wiki,
         'news': news,
         'char_mattr': char_mattr,
+        'para_slcv': para_slcv,
         'uni_ppl': uni_ppl,
         'uni_tri_ratio': uni_tri_ratio,
         'indicators': indicators,
@@ -1212,6 +1289,7 @@ LR_FEATURE_NAMES = (
     'wiki_vs_human',        # F-3 2026-04-22, HC3 d=1.58
     'wiki_vs_primary',      # F-3 2026-04-22, HC3 d=1.13
     'news_vs_human',        # F-11 2026-04-22, HC3 d=1.20 (on 10-category news corpus)
+    'para_sent_len_cv_avg', # v5 P1 2026-04-29, longform d=-2.08 (multi-paragraph only)
 )
 
 
@@ -1335,6 +1413,7 @@ def extract_feature_vector(text_or_analysis):
     bino = analysis.get('bino', {}) or {}
     wiki = analysis.get('wiki', {}) or {}
     news = analysis.get('news', {}) or {}
+    para_slcv = analysis.get('para_slcv', {}) or {}
 
     vec = [
         float(analysis.get('perplexity') or 0.0),
@@ -1359,6 +1438,7 @@ def extract_feature_vector(text_or_analysis):
         float(wiki.get('wiki_vs_human') or 0.0),
         float(wiki.get('wiki_vs_primary') or 0.0),
         float(news.get('news_vs_human') or 0.0),
+        float(para_slcv.get('mean_cv') or 0.0),
     ]
     return vec, list(LR_FEATURE_NAMES)
 

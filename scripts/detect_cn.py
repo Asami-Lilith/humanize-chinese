@@ -438,6 +438,18 @@ def detect_patterns(text):
                 'text': f'字符多样性 MATTR {mattr:.3f}（< 0.65，窗内用字过于集中）',
                 'severity': 'statistical',
             })
+
+        # Per-paragraph sentence-length CV (v5 P1 cycle 131,
+        # longform calibration 2026-04-29 d=-2.08)
+        if indicators.get('low_para_sent_len_cv'):
+            pscv = ngram_stats.get('para_slcv', {})
+            issues['stat_low_para_sent_len_cv'].append({
+                'text': (
+                    f'段内句长 CV 均值 {pscv.get("mean_cv", 0):.2f}'
+                    f'（< 0.35，每段内句子长度都过均匀，AI 长文本特征）'
+                ),
+                'severity': 'statistical',
+            })
     
     # ── Compute metrics ──
     metrics = {
@@ -490,6 +502,7 @@ STATISTICAL_WEIGHTS = {
     'stat_low_surprisal_kurt': 6,
     'stat_low_burstiness': 3,
     'stat_uniform_entropy': 2,
+    'stat_low_para_sent_len_cv': 10,          # v5 P1 2026-04-29, longform d=-2.08 (multi-paragraph only)
 }
 
 def calculate_score(issues, metrics):
@@ -625,6 +638,7 @@ CATEGORY_NAMES = {
     'stat_high_curvature': ('📊', '局部曲率高'),
     'stat_low_binoculars_diff': ('📊', '双ngram对齐度高'),
     'stat_low_char_mattr': ('📊', '字符多样性偏低'),
+    'stat_low_para_sent_len_cv': ('📊', '段内句长均匀'),
 }
 
 def format_output(issues, metrics, score, sentences=None, as_json=False, score_only=False, verbose=False):
