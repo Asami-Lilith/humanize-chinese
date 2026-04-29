@@ -828,6 +828,92 @@ def _boost_one_paragraph_cv(para, target_cv):
     return ''.join(s + p for s, p in pairs)
 
 
+_PARA_BOOST_REACTIONS = (
+    '的确', '确实如此', '颇有道理', '不无道理', '事出有因',
+    '耐人寻味', '值得深思', '让人深思', '可见一斑', '有一定道理',
+    '各有道理', '各有说法', '难以一概', '难以断言', '说来话长',
+    '一言难尽',
+)
+
+
+def _boost_one_para_via_merge(para, target_cv):
+    """Merge a single pair of adjacent short-medium sentences with a comma
+    to lift a uniform paragraph's internal sentence-length CV. Reuses the
+    Strategy-A merge guards from randomize_sentence_lengths (reactions,
+    paragraph-break boundary, total length cap)."""
+    cn_count = len(re.findall(r'[一-鿿]', para))
+    if cn_count < 60:
+        return para
+
+    parts = re.split(r'([。！？])', para)
+    pairs = []
+    for i in range(0, len(parts) - 1, 2):
+        s = parts[i]
+        p = parts[i + 1] if i + 1 < len(parts) else ''
+        if s.strip():
+            pairs.append([s, p])
+    if len(parts) % 2 == 1 and parts[-1].strip():
+        pairs.append([parts[-1], ''])
+
+    if len(pairs) < 4:
+        return para
+
+    lens = [len(re.findall(r'[一-鿿]', s)) for s, _ in pairs]
+    valid = [l for l in lens if l >= 5]
+    if len(valid) < 3:
+        return para
+    m = sum(valid) / len(valid)
+    if m == 0:
+        return para
+    var = sum((l - m) ** 2 for l in valid) / len(valid)
+    cv = (var ** 0.5) / m
+
+    if cv >= target_cv:
+        return para
+
+    # Find an adjacent pair both 5..25 chars whose merged length is <=60
+    # (so we cross the medium→long boundary and lift CV without making
+    # the merged sentence unwieldy).
+    for i in range(len(pairs) - 1):
+        l1, l2 = lens[i], lens[i + 1]
+        if not (5 <= l1 <= 25 and 5 <= l2 <= 25):
+            continue
+        if l1 + l2 > 60:
+            continue
+        s1, _ = pairs[i]
+        s2, p2 = pairs[i + 1]
+        if (s1.strip() in _PARA_BOOST_REACTIONS or
+                s2.strip() in _PARA_BOOST_REACTIONS):
+            continue
+        if '\n' in s2:
+            continue
+        merged = s1.rstrip() + '，' + s2.lstrip()
+        pairs[i] = [merged, p2]
+        pairs.pop(i + 1)
+        break
+
+    return ''.join(s + p for s, p in pairs)
+
+
+def boost_para_cv_via_merge(text, target_cv=0.40):
+    """v5 P1 humanize counter-measure (merge variant).
+
+    Walks paragraphs and, for any whose internal sentence-length CV is
+    below target, merges a single pair of adjacent short-medium
+    sentences with a comma. This removes one period (counter to the
+    truncation variant in boost_para_sent_len_cv that adds one) so
+    the punct_density LR contribution doesn't cancel the para-CV
+    contribution, and the merged sentence typically clears the
+    medium→long threshold (sent_len_long_frac coef in the longform LR
+    is -0.44, so producing more longs helps).
+    """
+    paragraphs = text.split('\n\n')
+    if len(paragraphs) < 2:
+        return text
+    return '\n\n'.join(_boost_one_para_via_merge(p, target_cv)
+                       for p in paragraphs)
+
+
 def boost_para_sent_len_cv(text, target_cv=0.40):
     """v5 P1 humanize counter-measure for stat_low_para_sent_len_cv (d=-2.08).
 
@@ -1736,12 +1822,15 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
             text = inject_noise_expressions(text, density=noise_density, style=noise_style)
         text = randomize_sentence_lengths(text, aggressive=aggressive, seed=seed)
 
-    # v5 P1 humanize counter-measure for stat_low_para_sent_len_cv lives in
-    # boost_para_sent_len_cv. Pipeline integration deferred: a 20-sample
-    # threshold sweep showed truncating one long sentence per paragraph
-    # injects a period whose punct_density LR contribution (+1.556) cancels
-    # the para CV LR contribution (-0.339). Function kept for future
-    # iteration with a merge-based or short-injection mechanism.
+    # v5 P1 humanize counter-measure for stat_low_para_sent_len_cv. The
+    # truncation variant (boost_para_sent_len_cv) was shelved because
+    # adding a period bumps punct_density and cancels the para-CV win.
+    # The merge variant lifts a uniform paragraph by combining two
+    # adjacent short-medium sentences with a comma — removing one
+    # period, often pushing the merged sentence over the long threshold,
+    # both of which point LR away from AI. n=20 sweep at target=0.40
+    # showed avg LR delta -0.95 with zero regressions.
+    text = boost_para_cv_via_merge(text)
 
     # Final transition cap — AI overuses 首先/然而/此外/因此 etc, detect fires
     # density > 8/1000 chars. Cap at 6 to leave margin. Preserves text that's
