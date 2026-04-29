@@ -34,6 +34,8 @@ import ngram_model as nm
 AI_LONGFORM_PATH = os.path.join(WORKSPACE, 'data/ai_longform_corpus.jsonl')
 HUMAN_NOVEL_PATH = os.path.join(WORKSPACE, 'data/human_novel_corpus.jsonl')
 HUMAN_NEWS_PATH = os.path.join(WORKSPACE, 'data/human_news_corpus.jsonl')
+HUMAN_NEWS_MULTIPARA_PATH = os.path.join(
+    WORKSPACE, 'data/human_news_multipara_corpus.jsonl')
 DEFAULT_OUT = os.path.join(SCRIPT_DIR, 'lr_coef_longform.json')
 
 
@@ -91,6 +93,8 @@ def main():
     ap.add_argument('--n-ai', type=int, default=170)
     ap.add_argument('--n-human-novel', type=int, default=100)
     ap.add_argument('--n-human-news', type=int, default=200)
+    ap.add_argument('--n-human-news-multipara', type=int, default=0,
+                    help='multi-paragraph THUCNews samples (cycle 147 corpus expansion)')
     ap.add_argument('--seed', type=int, default=42)
     ap.add_argument('--c', type=float, default=1.0)
     ap.add_argument('--min-cn-ai', type=int, default=200)
@@ -120,7 +124,14 @@ def main():
     nws = _take(nws_pool, args.n_human_news, args.seed + 4)
     print(f'  Human news pool={len(nws_pool)}, taken={len(nws)}')
 
-    hum = nov + nws
+    print(f'Loading human news multi-para '
+          f'(target n={args.n_human_news_multipara})...')
+    nwsmp_pool = _load_jsonl(HUMAN_NEWS_MULTIPARA_PATH, args.min_cn_news,
+                             min_paras=args.min_paras)
+    nwsmp = _take(nwsmp_pool, args.n_human_news_multipara, args.seed + 5)
+    print(f'  Human news multi-para pool={len(nwsmp_pool)}, taken={len(nwsmp)}')
+
+    hum = nov + nws + nwsmp
     n = min(len(ai), len(hum))
     ai = ai[:n]
     hum = hum[:n]
