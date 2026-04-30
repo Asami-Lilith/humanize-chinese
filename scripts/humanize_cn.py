@@ -1312,6 +1312,18 @@ def inject_noise_expressions(text, density=0.15, style='general'):
     density: 大约每多少句插入一个（0.15 ≈ 每 6-7 句一个）
     style: general / academic
     """
+    # cycle 152: when style='general' but the text has 2+ markdown
+    # headers (academic survey / technical article), the 'filler' /
+    # 'transition_casual' / 'personal' categories from NOISE_EXPRESSIONS
+    # ('当然了' / '坦白讲' / '不瞒你说' etc.) read off-register inside
+    # formal prose. Promote to the academic noise subset, which keeps
+    # only hedging / self_correction / uncertainty.
+    if style == 'general':
+        n_md_headers = sum(1 for line in text.split('\n')
+                           if re.match(r'^\s*#{1,6}\s', line))
+        if n_md_headers >= 2:
+            style = 'academic'
+
     if style == 'academic':
         categories = NOISE_ACADEMIC_CATEGORIES
         expressions = NOISE_ACADEMIC_EXPRESSIONS
