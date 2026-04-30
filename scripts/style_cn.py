@@ -74,7 +74,11 @@ FORMAL_TO_CASUAL = {
     '在此基础上': '基于这个',
     '由此可见': '所以',
     '此外': '另外',
-    '然而': '但是',
+    # cycle 166: dropped '然而' -> '但是' — same substring-collision
+    # bug as cycle 161 (PLAIN) and cycle 165 (AC) — '自然而' / '显然而'
+    # / '突然而至' compounds get butchered. This dict is used by
+    # replace_formal_words via str.replace, which has no word-boundary
+    # awareness in Chinese.
     '因此': '所以',
     '并且': '而且',
     '不可否认': '确实',
