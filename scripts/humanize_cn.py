@@ -550,13 +550,20 @@ NOISE_EXPRESSIONS = {
 NOISE_ACADEMIC_CATEGORIES = ['hedging', 'self_correction', 'uncertainty']
 # Academic-specific hedging (more formal)
 NOISE_ACADEMIC_EXPRESSIONS = {
-    'hedging': ['客观地说', '实事求是地讲', '平心而论', '公正地看'],
-    'self_correction': ['准确地讲', '严格来说', '更确切地说', '往深了讲'],
+    # cycle 157: pool expanded from 4 → 7 each. Cycle 154 bn=10 academic
+    # dropped from +15 (with casual-filler injection) to +10.5 (with this
+    # formal-only pool). More formal candidates give random.choice more
+    # variety, raising the chance of hitting LR-favorable phrasing.
+    'hedging': ['客观地说', '实事求是地讲', '平心而论', '公正地看',
+                '从客观角度看', '理性而言', '客观看待'],
+    'self_correction': ['准确地讲', '严格来说', '更确切地说', '往深了讲',
+                        '细究而论', '准确而言', '严谨地说'],
     # Cycle 77: dropped '在一定程度上' from this academic uncertainty pool too
     # (sister fix to cycle 76 in academic_cn). It is in detect_cn's hedging_
     # language and ai_high_freq_words patterns; injecting it raises the AI
     # score. Pool 5→4.
-    'uncertainty': ['大致', '似乎', '或许', '多少'],
+    'uncertainty': ['大致', '似乎', '或许', '多少',
+                    '大体', '约莫', '大体上'],
 }
 
 def _load_bigram_freq():

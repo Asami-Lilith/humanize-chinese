@@ -811,6 +811,10 @@ _SHORT_REACTIONS_FORMAL = [
     '诚然如此。', '其理可循。', '尚需思辨。', '值得审视。',
     '确有依据。', '可见一斑。', '诚有道理。', '理应如此。',
     '尚待考证。', '不无道理。', '可资借鉴。', '值得深思。',
+    # cycle 157: pool 12 → 18 for more random.choice variance, helping
+    # bn=10 academic find more LR-favorable seeds.
+    '此论可立。', '尚有讨论。', '可作参考。',
+    '此点存疑。', '其义甚明。', '未必尽然。',
 ]
 
 _SHORT_REACTIONS_CASUAL = [
