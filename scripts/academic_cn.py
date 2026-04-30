@@ -889,6 +889,22 @@ def _break_uniform_structure(text):
     if len(paragraphs) < 3:
         return text
 
+    # cycle 170 guard (sister of humanize_cn.vary_paragraph_rhythm
+    # cycle 143 fix): if paragraph-length CV is already >= 0.40 (close
+    # to the human-text mean of 0.74), skip merge. Operating on
+    # already-varied paragraphs tends to push the distribution back
+    # toward uniform — a stuck academic sample regressed CV from 0.405
+    # to 0.320 across the full pipeline before that guard.
+    cn_lens = [count_chinese(p) for p in paragraphs]
+    valid_lens = [l for l in cn_lens if l >= 20]
+    if len(valid_lens) >= 3:
+        m_cn = sum(valid_lens) / len(valid_lens)
+        if m_cn > 0:
+            var = sum((l - m_cn) ** 2 for l in valid_lens) / len(valid_lens)
+            cv = (var ** 0.5) / m_cn
+            if cv >= 0.40:
+                return text
+
     result = []
     i = 0
     while i < len(paragraphs):
