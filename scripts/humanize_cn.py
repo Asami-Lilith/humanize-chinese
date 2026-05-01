@@ -1502,7 +1502,8 @@ def replace_phrases(text, casualness=0.3):
                 match = re.search(pattern, part)
                 if match:
                     replacement = random.choice(alternatives)
-                    part = part[:match.start()] + replacement + part[match.end():]
+                    expanded = match.expand(replacement)
+                    part = part[:match.start()] + expanded + part[match.end():]
                     replaced = True
             except re.error:
                 pass
