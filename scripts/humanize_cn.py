@@ -489,6 +489,9 @@ _CILIN_BLACKLIST = {
     # POS / meaning mismatch found in cycle 150 quality audit
     '容许',  # replaces 可能 — verb instead of modal
     '呈上',  # replaces 提供 — overly formal "submit upward"
+    # cycle 186: cilin 领域 alts that mean physical land, wrong for
+    # abstract domain — 教育领域 → 教育土地/园地/国土/圈子/天地 broken
+    '土地', '园地', '国土', '圈子', '天地',
 }
 
 
