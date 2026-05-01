@@ -547,7 +547,9 @@ NOISE_EXPRESSIONS = {
                 '老实说', '不夸张地说', '公正地看'],
     'self_correction': ['或者说', '准确地讲', '换个角度看', '严格来说',
                         '更确切地说', '往深了讲', '细想一下'],
-    'uncertainty': ['大概', '差不多', '似乎', '或许', '多少有些',
+    # cycle 183 dropped '或许' — in detect_cn HEDGING_PHRASES, injection
+    # increases hedging_language count, self-defeat (cycle 77 family).
+    'uncertainty': ['大概', '差不多', '似乎', '多少有些',
                     '约莫', '估摸着', '八成'],
     # Cycle 77: dropped '换句话说' — it is in detect_cn's ai_high_freq_words
     # pattern, so injecting it raises the AI score (self-defeating).
@@ -580,7 +582,9 @@ NOISE_ACADEMIC_EXPRESSIONS = {
     # (sister fix to cycle 76 in academic_cn). It is in detect_cn's hedging_
     # language and ai_high_freq_words patterns; injecting it raises the AI
     # score. Pool 5→4.
-    'uncertainty': ['大致', '似乎', '或许', '多少',
+    # cycle 183 dropped '或许' from academic uncertainty too — sister
+    # fix to general pool. Same detect_cn HEDGING_PHRASES self-defeat.
+    'uncertainty': ['大致', '似乎', '多少',
                     '大体', '约莫', '大体上'],
 }
 
