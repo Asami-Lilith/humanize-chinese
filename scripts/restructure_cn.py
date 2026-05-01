@@ -145,7 +145,7 @@ def _build_templates():
     # → '阵地地位'). Use suffixes that don't share their first char with
     # common Z+W endings.
     templates.append((
-        re.compile(r'(?P<X>[^，,。\n]{2,15})是(?P<Y>[^，,。\n]{2,12})的(?P<Z>重要|关键|核心|主要)(?P<W>[^，,。！？]{1,5})'),
+        re.compile(r'(?P<X>[^，,。\n]{2,15})是(?P<Y>[^，,。\n]{2,12})的(?P<Z>重要|关键|核心|主要)(?P<W>[^，,。！？\n]{1,5})'),
         [
             lambda m: f'就{m.group("Y")}而言，{m.group("X")}作为{m.group("W")}{m.group("Z").replace("重要","举足轻重").replace("关键","至关重要").replace("核心","不可或缺").replace("主要","相当突出")}',
         ]
