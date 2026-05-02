@@ -777,6 +777,53 @@ _CILIN_BLACKLIST = {
     '声辩',  # 理论 alt — narrow ("plead")
     '仰承',  # 利用/凭借 → ??? chain — deferential "accept respectfully"
     '拼杀',  # 攻击 alt — "fight to death", off in academic
+    # cycle 222 news/blog/review audit additions:
+    '构造',  # 布局 alt — "structure" wrong slot, "战略布局" → "战略构造" 错
+    '师资',  # 老师 alt — collective noun, "一名师资" 错
+    '园丁',  # 老师 alt — metaphor, off in factual text
+    '产物',  # 结果 alt — "product", semantic shift
+    '下场',  # 结果 alt — narrow ("downfall")
+    '下文',  # 结果 alt — narrow ("subsequent passage")
+    '了局',  # 结果 alt — archaic
+    '分晓',  # 结果 alt — narrow ("decisive outcome")
+    '名堂',  # 结果 alt — colloquial ("trick/explanation")
+    '部署',  # 配置 alt — "deploy" military/IT slot
+    '嬉水',  # 游戏 alt — "play in water" totally wrong
+    '嬉戏',  # 游戏 alt — narrow "play"
+    '一日游',  # 游戏 alt — "one-day tour"
+    '休闲游',  # 游戏 alt — "leisure tour"
+    '好耍',  # 游戏 alt — colloquial "fun"
+    '差一点',  # 几乎 alt — "almost (didn't)" different meaning
+    '差点儿',  # 几乎 alt — colloquial 北方话
+    '常备',  # 日常 alt — "regular/ready" wrong slot
+    '万般',  # 日常 alt — "all kinds" wrong slot
+    '一般性',  # 日常 alt — "general" wrong slot
+    '处事',  # 处理 alt — substring collision with 处理器, "处理器" → "处事器" 错
+    '措置',  # 处理 alt — formal/archaic
+    '凌厉',  # 强烈 alt — narrow ("sharp/fierce")
+    '凶猛',  # 强烈 alt — narrow ("fierce")
+    '利害',  # 强烈 alt — narrow ("intense/clever")
+    '剧烈',  # 强烈 alt — narrow ("violent")
+    '凭依',  # 利用 alt — formal/literary
+    '从新',  # 重新 alt — colloquial 北方话
+    '再也',  # 重新 alt — adverb-only
+    '再行',  # 重新 alt — formal
+    '双重',  # 重新 alt — wrong meaning ("double")
+    '允当',  # 适合 alt — formal/archaic
+    '切合',  # 适合 alt — narrow ("fit closely")
+    '切当',  # 适合 alt — formal/archaic
+    '合乎',  # 适合 alt — formal pre-noun
+    '合宜',  # 适合 alt — formal/archaic
+    '搭架子',  # 布局 alt — colloquial "set up framework"
+    '份额',  # 重量 alt — "share/portion" wrong
+    '净重',  # 重量 alt — narrow ("net weight")
+    '千粒重',  # 重量 alt — agricultural specific
+    '毛重',  # 重量 alt — narrow ("gross weight")
+    '咋舌',  # 惊叹 alt — "tongue-tied" wrong
+    '奇异',  # 惊叹 alt — "strange/peculiar" semantic shift
+    '奇怪',  # 惊叹 alt — "strange"
+    '希罕',  # 惊叹 alt — "rare/curious"
+    '惊呆',  # 惊叹 alt — narrow "stunned"
 }
 
 
