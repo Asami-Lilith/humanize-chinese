@@ -627,6 +627,8 @@ _CILIN_BLACKLIST = {
     '治本',  # 管理 alt — narrow medical idiom ("treat root cause")
     '治治',  # 管理 alt — colloquial duplicate ("punish/teach a lesson")
     '管事',  # 管理 alt — narrow ("be in charge of trifles"), colloquial
+    '贯彻',  # 实现 alt — narrow ("carry through policy"), "技术实现" → "技术贯彻" 错
+    '落实',  # 实现 alt — narrow ("implement policy"), "技术实现" → "技术落实" 错
 }
 
 
