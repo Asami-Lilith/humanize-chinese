@@ -495,15 +495,26 @@ _CILIN_BLACKLIST = {
 }
 
 
-# Source-side blacklist: 2-char cilin keys that are almost always part of
-# longer compounds, so substituting them mid-compound produces broken
-# Chinese ("少不了" → "少不息" / "受不了" → "受不息"). Block at the source
-# (skip these as candidate replacement targets in
-# reduce_cross_para_3gram_repeat). cycle 191 found '不了' via long_blog
-# inspection: 26%+ of '不了' occurrences are the X不了 negative-potential
-# pattern (受不了/少不了/免不了/做不了…), all break under 不了 → 不息/不停.
+# Source-side blacklist: 2-char cilin keys whose substitution produces
+# broken Chinese — either because they're almost always part of longer
+# compounds (substring-collision) or because their cilin alts shift
+# meaning even in standalone position. Block at the source (skip these
+# as replacement targets in reduce_cross_para_3gram_repeat).
+#
+# cycle 191: '不了' — X不了 negative-potential compound (受不了/少不了/
+# 免不了/做不了…), 不了 → 不息/不停 breaks compound (少不息).
+# cycle 192: empirical audit of 10 high-freq function words. Each line
+# below = source word + the broken sample observed in test:
 _CILIN_SOURCE_BLACKLIST = {
-    '不了',
+    '不了',  # 少不了 → 少不息
+    '不是',  # 不是教师 → 纰缪教师 (alts: 不对/偏向/纰缪 — meaning shift)
+    '一下',  # 想一下 → 想一瞬 (alts 一刹那/一瞬 too dramatic)
+    '一些',  # 带一些礼物 → 带好几礼物 (好几 needs 个 measure word)
+    '不要',  # 不要担心 → 并非担心 (并非 is statement-of-fact, not directive)
+    '就是',  # 就是这样 → 即使这样 (即使 = "even if", needs main clause)
+    '不能',  # 不能解决 → 未能解决 ("can't" → "didn't succeed", semantic shift)
+    '什么',  # 什么东西 → 咋样东西 (咋样 colloquial + register-mismatch)
+    '只是',  # 只是开始 → 单单开始 (单单 modifies things, not actions)
 }
 
 
