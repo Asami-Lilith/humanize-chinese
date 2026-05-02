@@ -791,17 +791,14 @@ def remove_ai_fillers(text, delete_prob=0.5):
 # are AI fillers) and short (3-6 chars) so they count toward short_frac.
 
 _SHORT_REACTIONS_NEUTRAL = [
-    # D-3 cycle 29: dropped 2-char "的确" — sentence-length feature skips < 3
-    # Chinese chars so 2-char reactions don't register as "short sentences".
-    # All entries now 4-6 chars, each reaction registers properly.
-    # cycle 195: trimmed 17 → 9 — removed register-mismatched entries
-    # (事出有因/耐人寻味/让人深思/可见一斑/难以一概/难以断言/说来话长/一言难尽)
-    # that read awkward in informational/news/workplace contexts where
-    # most humanize calls land. Kept entries fit debate/assertion contexts
-    # which are more common in Chinese writing overall.
-    '确实如此。', '颇有道理。', '不无道理。', '值得深思。',
-    '有一定道理。', '各有道理。', '各有说法。',
-    '的确如此。', '确实是这样。',
+    # cycle 204 (sway directive 语句通顺优先): emptied. All previously-kept
+    # entries are debate/opinion-context phrases ("确实如此。" / "有一定道理。"
+    # etc.) that read jarring at end of informational/business/news
+    # paragraphs (e.g. quarterly report or pure-fact narration). Per sway
+    # 2026-05-02 msg 2171, fluency now overrides LR-floor concerns; the
+    # short_frac LR signal contribution from these reactions is forfeit.
+    # FORMAL pool retained for markdown-headered formal documents.
+    # Empty list triggers early return in _insert_reactions_in_paragraph.
 ]
 
 
@@ -1045,6 +1042,10 @@ def _insert_reactions_in_paragraph(p, target, max_per, min_sentences=3, scene='g
         # cycle 151: 'formal' scene routes to the formal-register pool
         pool = (_SHORT_REACTIONS_FORMAL if scene == 'formal'
                 else _SHORT_REACTIONS_NEUTRAL)
+        # cycle 204: empty NEUTRAL pool means general scene gets no
+        # neutral reaction insertion; bail out cleanly.
+        if not pool:
+            return p
         if used is not None:
             avail = [r for r in pool if r not in used]
             if not avail:
