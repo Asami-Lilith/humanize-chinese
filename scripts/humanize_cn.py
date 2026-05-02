@@ -669,6 +669,46 @@ _CILIN_BLACKLIST = {
     '公断',  # 决定 alt — legal/formal public arbitration
     '品目',  # 种类 alt — narrow ("article entries" in catalog)
     '档级',  # 种类 alt — narrow ("rank/grade")
+    # cycle 216 longform audit additions:
+    '惨遭',  # 面临 alt — "suffer tragically" wrong tone for "面临挑战"
+    '屡遭',  # 面临 alt — narrow (repeatedly suffer)
+    '倍受',  # 面临 alt — only fits 关注/重视 (positive), "倍受挑战" 错
+    '备受',  # 面临 alt — same constraint
+    '未遭',  # 面临 alt — archaic
+    '意志',  # 旨在 alt — "willpower" not "purpose", "意志提高" 错
+    '心意',  # 旨在 alt — "intention" but not "aim", same slot mismatch
+    '意旨',  # 旨在 alt — archaic "imperial decree"
+    '旨意',  # 旨在 alt — same archaic
+    '法旨',  # 旨在 alt — Buddhist/imperial decree
+    '拍卖',  # 处理 alt — "auction" totally different domain
+    '处分',  # 处理 alt — narrow disciplinary action
+    '上座',  # 首席 alt — "seat of honor", wrong for executive title
+    '上位',  # 首席 alt — narrow ("upper position")
+    '剖示',  # 展示 alt — non-word/very rare
+    '兆示',  # 展示 alt — narrow archaic ("portend")
+    '呈示',  # 展示 alt — formal/legal narrow
+    '试点县',  # 县城 alt — "pilot county" gov-policy specific
+    '版纳',  # 县城 alt — actual place name (西双版纳), nonsense as alt
+    '京都',  # 北京 alt — Kyoto / archaic capital
+    '上京',  # 北京 alt — archaic
+    '京华',  # 北京 alt — poetic
+    '京城',  # 北京 alt — slightly archaic, ok in some contexts but mostly off
+    '京师',  # 北京 alt — imperial-era term
+    '凤城',  # 北京 alt — poetic name for capitals
+    '中标',  # 成功 alt — "win bid" commercial
+    '交卷',  # 成功 alt — "submit exam paper"
+    '姣好',  # 成功 alt — "beautiful" not "successful"
+    '完了',  # 成功 alt — "finished" not "succeeded"
+    '到位',  # 成功 alt — narrow ("in place"), often wrong slot
+    '作派',  # 主义 alt — "mannerism/style" wrong, "存在主义" → "存在作派" 错
+    '官气',  # 主义 alt — "bureaucratic air"
+    '架子',  # 主义 alt — "framework/airs"
+    '作风',  # 主义 alt — "style" sometimes ok but breaks 主义 idioms
+    '犯得上',  # 值得 alt — colloquial "worth doing" 北方话
+    '犯得着',  # 值得 alt — same
+    '其时',  # 当时 alt — archaic "at that time"
+    '讲堂',  # 教室 alt — formal/grand "lecture hall"
+    '归于',  # 归属 alt — preposition rather than noun, "归于的" 怪
 }
 
 
