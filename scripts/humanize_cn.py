@@ -573,6 +573,9 @@ _CILIN_BLACKLIST = {
     '功效',  # 意义 alt — "真正意义上" → "真正功效上" broken
     '功能',  # 意义 alt — "真正意义上" → "真正功能上" broken (function not meaning)
     '今朝',  # 现在 alt — archaic poetic register ("今朝有酒今朝醉"), off in modern prose
+    '目下',  # 目前 alt — archaic ("at present" classical Chinese), sway flagged msg 2198
+    '手上',  # 目前 alt — colloquial "in hand", off in formal/academic
+    '时下',  # 目前 alt — narrow ("nowadays" trend-context), off in research register
 }
 
 
