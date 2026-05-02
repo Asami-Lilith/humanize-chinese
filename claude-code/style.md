@@ -14,7 +14,7 @@ Transform Chinese text into a specific writing style.
 
 1. Parse the style name (first argument) and the text (rest).
 
-2. Save and run (v3.0 automatically runs humanize first to strip AI words, then applies style):
+2. Save and run (默认先跑 humanize 去 AI 词，再应用风格；`--no-humanize` 关闭):
    ```bash
    cat > /tmp/style_input.txt << 'STY_EOF'
    [user's text here]
@@ -38,6 +38,7 @@ Transform Chinese text into a specific writing style.
 | `academic` | 学术风格，严谨论述 |
 | `literary` | 文艺风格，优美散文 |
 | `weibo` | 微博风格，简短犀利 |
+| `novel` | 长篇叙事 (剔除 AI prompt artifact + markdown headers + dialogue 保护) |
 
 ## Example
 

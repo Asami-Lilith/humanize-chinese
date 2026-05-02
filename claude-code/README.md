@@ -1,4 +1,4 @@
-# Humanize Chinese for Claude Code (v3.0)
+# Humanize Chinese for Claude Code (v5.0)
 
 ## Installation
 
@@ -24,21 +24,21 @@ cp humanize-chinese/claude-code/style.md .claude/commands/
 
 | Command | Description |
 |---------|-------------|
-| `/detect [text]` | Detect AI patterns, 0-100 score. 20+ rules + 8 HC3-calibrated statistical features |
-| `/humanize [text]` | Rewrite (tiered conservative/moderate/full based on input score) |
-| `/academic [text]` | Academic paper AIGC reduction. 11 dimensions + dual scoring (CNKI/VIP/Wanfang) |
-| `/style [style] [text]` | Transform to style (7 styles). Auto-humanizes first. |
+| `/detect [text]` | Detect AI patterns, 0-100 fused score (rule × 0.2 + LR × 0.8). Scene-aware: general / academic / novel / auto |
+| `/humanize [text]` | Rewrite (default best-of-10 取最低 LR, scene-aware 三路 LR) |
+| `/academic [text]` | Academic paper AIGC reduction. Scene-aware academic LR + 双评分 (CNKI/VIP/Wanfang) |
+| `/style [style] [text]` | Transform to style (8 styles incl. novel). Auto-humanizes first. |
 
-## What's new in v3.0
+## What's new in v5.0
 
-- **HC3 accuracy 73%** (up from 51% in v2.4) — statistical features calibrated on HC3-Chinese 300+300 human/AI pairs
-- **Sentence-length CV** (Cohen's d = 1.22, strongest signal)
-- **40 paraphrase templates** (up from 15)
-- **122 academic-tone replacements** including transitions (首先→其一/最初, 然而→但是, 因此→故而)
-- **CiLin synonym expansion** (38,873 words, semantic filter)
-- **Tiered humanize intensity** (conservative/moderate/full auto-select)
+- **Scene-aware LR fusion** (`general` / `academic` / `longform` 三路 LR，`--scene auto` 按 ≥1500 字切换)
+- **HC3 fused 准确率 95%** (vs v3.0 的 73%) on HC3-Chinese 100-sample regression
+- **Long-form support**: paragraph length CV / 段内句长 CV / 跨段 trigram 重复 三新信号 + 反制改写
+- **`--style novel`** 长篇叙事专属 (剔除 AI prompt artifact + markdown headers + dialogue 保护)
+- **`--best-of-n N`** humanize N 次取最低 LR (默认 10)
+- **165 replacement patterns** (vs v3 122) + CiLin 同义词词林 38873 with collision blacklist (49 entries)
+- **Hero 降幅**: 学术 100→35 (-65) / 通用 100→35 (-65) / 小红书 100→41 (-59) / 长篇博客 96→41 (-55) / 工作汇报 96→13 (-83)
 - **Unified CLI**: `./humanize {detect,rewrite,academic,style,compare}`
-- **`--quick` flag**: 18× speed for 10k-char texts
 
 ## Note
 

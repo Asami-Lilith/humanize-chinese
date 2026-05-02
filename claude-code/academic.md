@@ -1,8 +1,8 @@
-# /academic — 学术论文 AIGC 降重（v3.0）
+# /academic — 学术论文 AIGC 降重（v5.0）
 
 Reduce AIGC detection score for academic papers. Targets CNKI (知网), VIP (维普), Wanfang (万方).
 
-v3.0: **11 detection dimensions** (含 topic diffusion 扩散度), **122 academic replacements** (含 academic-tone 过渡词 19 条), **双评分对比** (学术专用 + 通用 detect_cn)。
+v5.0: **scene-aware academic LR** (在中文学术语料 +HC3 academic 子集训练，coef 文件 `lr_coef_academic.json`), **10 学术检测维度**, **165 replacement patterns** (含 academic-tone 过渡词), **双评分对比** (学术专用 + 通用 detect_cn fused)。
 
 ## Usage
 
@@ -39,7 +39,7 @@ The user provides academic text or a file path. Run academic-specific rewriting.
    - The rewritten text
    - Remind them to review: check terminology accuracy and citation format
 
-## Target Scores (v3.0)
+## Target Scores (v5.0 fused)
 
 | Score | Level | Action |
 |-------|-------|--------|
@@ -47,7 +47,7 @@ The user provides academic text or a file path. Run academic-specific rewriting.
 | 30-49 | MEDIUM / 中 | ⚠️ Manual polish suggested |
 | 50+   | HIGH / 高 | Try `-a` (aggressive) and review manually |
 
-**Note v3.0**: Scoring recalibrated — a paper scoring 90 (VERY HIGH) that drops to 37 (MEDIUM) is a 55-point improvement. Don't expect < 25 on detector-dense text.
+**Note v5.0**: fused 评分基于 scene-aware academic LR + rule + stat ensemble。Hero 学术样本 100 → 35 (-65 分)。学术文本对 detector 信号最饱和（论文格式 + 术语密度 + 引用模板），单纯词替换收益有限，best-of-10 + cilin 同义词扩展 + 段落级 CV 反制三者叠加。
 
 ## What It Does
 

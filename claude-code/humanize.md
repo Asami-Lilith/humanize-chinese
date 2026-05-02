@@ -1,8 +1,8 @@
-# /humanize — 去除中文文本的 AI 痕迹（v3.0）
+# /humanize — 去除中文文本的 AI 痕迹（v5.0）
 
-Rewrite Chinese text to remove AI fingerprints. Detect → Rewrite → Verify.
+Rewrite Chinese text to remove AI fingerprints. Detect → Rewrite (best-of-N) → Verify.
 
-v3.0 uses **tiered intensity** (conservative/moderate/full based on input AI score), **40 paraphrase templates**, **45 transition-word replacements**, **paragraph-end short-sentence insertion**, and HC3-calibrated indicator suppression.
+v5.0 uses **scene-aware LR humanize loss** (general / academic / longform), **best-of-N humanize** (默认 N=10 取最低 LR), **165 replacement patterns**, **40+ paraphrase templates**, **段落级反制** (paragraph length CV / 跨段 trigram 重复), 加 **CiLin 同义词词林** 38873 with collision blacklist。
 
 ## Usage
 
@@ -31,23 +31,26 @@ The user provides Chinese text (directly or as a file path). Run the full pipeli
 
 ## Options
 
-- Default mode sufficient for most cases (auto-selects conservative/moderate/full based on input score)
-- Use `-a` (aggressive) to force full-pipeline rewriting
-- Add `--style xiaohongshu` / `--style zhihu` etc. for platform-specific rewrites
-- Add `--quick` to skip statistical optimization (18× speed on 10k-char text)
-- Add `--cilin` to enable CiLin 同义词词林 expansion (38,873 words with semantic filter)
+- Default mode (best-of-10) 大多数场景足够
+- `--best-of-n N` 自调 N (more = better but slower; N=1 等于单次 humanize)
+- `-a` (aggressive) 强制 full-pipeline
+- `--style xiaohongshu` / `--style novel` / `--style zhihu` etc. for platform-specific rewrites
+- `--scene novel` 长文本/小说场景 (≥500 字推荐)
+- `--quick` 跳统计优化 + best-of (18× 速度，单次 humanize)
+- `--cilin` 启用 CiLin 同义词词林扩展 (38,873 words, 含 49 entry collision blacklist)
 
 ## Available Styles
 
-casual, zhihu, xiaohongshu, wechat, academic, literary, weibo
+casual, zhihu, xiaohongshu, wechat, academic, literary, weibo, **novel**（长篇叙事专属）
 
-## Target Scores
+## Target Scores (v5.0 fused)
 
-| Input type | Good v3.0 output score |
-|------------|------------------------|
-| Stereotyped AI (样板 AI 文) | 40-55 (MEDIUM, from 90+) |
+| Input type | Good output score |
+|------------|------------------|
+| 刻板 AI 样板文 (论文模板/八股) | < 35 (LOW, from 90+) |
 | Natural ChatGPT | 5-15 (LOW, from 15-25) |
-| Academic paper | < 40 (MEDIUM, academic-specific); < 35 generic |
+| Academic paper | < 35 (LOW, academic-specific + generic 双低) |
+| 长篇博客/小说 (≥1500 字) | ~41 (MEDIUM, from 90+) |
 
 ## Example
 
