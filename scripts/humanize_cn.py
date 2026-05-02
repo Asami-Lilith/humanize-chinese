@@ -735,6 +735,48 @@ _CILIN_BLACKLIST = {
     '其时',  # 当时 alt — archaic "at that time"
     '讲堂',  # 教室 alt — formal/grand "lecture hall"
     '归于',  # 归属 alt — preposition rather than noun, "归于的" 怪
+    # cycle 221 academic 5-sample audit additions:
+    '胁从',  # 威胁 alt — "be coerced into" (legal term)
+    '威慑',  # 威胁 alt — narrow ("intimidate")
+    '威逼',  # 威胁 alt — colloquial coercion
+    '胁迫',  # 威胁 alt — legal coercion
+    '体贴',  # 关注 alt — personal "considerate"
+    '关怀',  # 关注 alt — soft "show concern (caring)"
+    '关爱',  # 关注 alt — "love & care"
+    '眷顾',  # 关注 alt — formal/literary "favor"
+    '求战',  # 挑战 alt — military "ask for battle"
+    '包罗',  # 包括 alt — formal "encompass all"
+    '席卷',  # 包括 alt — "sweep over"
+    '揽括',  # 包括 alt — "monopolize/include all"
+    '强攻',  # 攻击 alt — military
+    '抢攻',  # 攻击 alt — sports/military
+    '挨斗',  # 攻击 alt — political-era "denounced"
+    '掊击',  # 攻击 alt — archaic
+    '反响',  # 影响 alt — "echo/response", narrow
+    '反射',  # 影响 alt — physics
+    # 反应 NOT blocked: high-frequency word, blocking costs HC3 avg -0.5
+    # without clear fluency win in informational text. Keep alt available.
+    '反馈',  # 影响 alt — narrow technical
+    '想当然',  # 影响 alt — different ("take for granted")
+    '感应',  # 影响 alt — physics/spiritual
+    '安好',  # 安全 alt — 古文 "well-being"
+    '安康',  # 安全 alt — 古文 "health"
+    '安然',  # 安全 alt — adverb-like "safely"
+    '康宁',  # 安全 alt — 古文 "peace"
+    '无恙',  # 安全 alt — 古文 "no harm"
+    '音信',  # 信息 alt — 古文 "tidings"
+    '音尘',  # 信息 alt — 古文
+    '音息',  # 信息 alt — 古文
+    '音讯',  # 信息 alt — 古文
+    '音问',  # 信息 alt — 古文
+    '中坚',  # 核心 alt — narrow ("backbone force")
+    '争辩',  # 理论 alt — different ("argue")
+    '争鸣',  # 理论 alt — narrow ("contend")
+    '反驳',  # 理论 alt — different ("rebut")
+    '回驳',  # 理论 alt — same
+    '声辩',  # 理论 alt — narrow ("plead")
+    '仰承',  # 利用/凭借 → ??? chain — deferential "accept respectfully"
+    '拼杀',  # 攻击 alt — "fight to death", off in academic
 }
 
 
