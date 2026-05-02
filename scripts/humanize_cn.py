@@ -290,7 +290,9 @@ WORD_SYNONYMS = {
     '主要': ['核心', '关键', '首要'],
     '一般': ['通常', '往常', '照例', '大抵'],
     '大量': ['海量', '大批', '众多', '成堆的'],
-    '进一步': ['更', '再', '深入', '继续'],
+    # cycle 203: dropped '更', '再' — "更进一步" → "更更" / "更再" broken;
+    # "再X" reads as repetition (wrong meaning, 进一步 implies progression).
+    '进一步': ['深入', '继续'],
     '充分': ['尽情', '透彻', '淋漓', '饱满'],
     '直接': ['径直', '当面', '立刻', '干脆'],
     # cycle 164: '特别' alts trimmed to '尤其' only — '格外'/'极'/'分外'
@@ -320,7 +322,10 @@ WORD_SYNONYMS = {
     # awkward (大幅 only modifies verbs of change like 提升/下降, not nouns).
     '显著': ['明显', '可观'],
     '问题': ['难题', '麻烦', '症结'],
-    '方面': ['层面', '维度', '领域'],
+    # cycle 203: dropped '层面' — "多方面" → "多层面" sub broken;
+    # 多方面 is fixed adverb meaning "multiply", 多层面 means
+    # "multi-level" (different concept). 维度/领域 still preserve adverb.
+    '方面': ['维度', '领域'],
     '情况': ['状况', '形势', '境况', '局面'],
     '特点': ['特征', '属性', '标志', '特色'],
     # Cycle 71: dropped '招数' — colloquial 'trick / move' (martial-arts
@@ -546,6 +551,14 @@ _CILIN_BLACKLIST = {
     '升格',  # 提升 alt — "upgrade to higher class", off in skill/effort contexts
     '升级',  # 提升 alt — software/version register, off in many contexts
     '数目字',  # 数字 alt — "数字化" → "数目字化" broken (数目字 = numerical figure)
+    # cycle 203 (sway 语句通顺优先 directive): more broken alts surfaced
+    '兼具',  # 具有 alt — narrow "include both", "兼具广阔前景" broken
+    '由此',  # 通过 alt — connector word, "由此各方合力" broken (loses 通过 means "via")
+    '稿子',  # 规划/计划 alt — colloquial "draft", off in formal "任务稿子"
+    '不错',  # 科学 alt — informal compliment, "践行不错的时间管理" broken
+    '正值',  # 正在 alt — only with time periods (正值春季), broken in "正值推动"
+    '条理',  # 系统 alt — "智能评估系统" → "智能评估条理" broken (条理 = orderliness)
+    '功用',  # 意义/作用 alt — narrow "function", "意义" → "功用" register-mismatched
 }
 
 
@@ -1484,13 +1497,27 @@ def inject_noise_expressions(text, density=0.15, style='general'):
     # robot-style.
     used = set()
 
+    # cycle 203 (sway directive \u8bed\u53e5\u901a\u987a\u4f18\u5148): track which paragraphs already
+    # had a noise injection. Multiple injections per paragraph create
+    # "\u5728\u6211\u770b\u6765\uff0cX\u3002\u6ce8\u610f\uff0cY\u3002\u8bf4\u5230\u5e95\uff0cZ" robotic chains. Hard cap = 1
+    # injection per paragraph. Identifies paragraph by the cumulative \n\n
+    # count in text up to the sentence position.
+    para_injected = {}
+
     injected = 0
+    cum_text = ''
     for i in range(len(sentences)):
+        s_text = sentences[i][0]
+        s_punct = sentences[i][1] or ''
+        # cycle 203: track cumulative text to identify current paragraph
+        # (paragraph = chunk between \n\n breaks). Update at top so all
+        # `continue` branches keep para_idx in sync.
+        para_idx = cum_text.count('\n\n')
+        cum_text += s_text + s_punct
         # Skip the last sentence (avoid orphaned expressions)
         if i >= len(sentences) - 1:
             continue
         # Skip very short sentences
-        s_text = sentences[i][0]
         if len(re.findall(r'[\u4e00-\u9fff]', s_text)) < 8:
             continue
         # Skip sentences that contain dialogue quotes. Injecting a noise
@@ -1507,6 +1534,42 @@ def inject_noise_expressions(text, density=0.15, style='general'):
         # forms like '**1. \u8d44\u6e90\u74f6\u9888\uff1a** \u9ad8\u5e76\u53d1\u610f\u5473\u7740\u2026' that the cycle 57
         # check missed (audit found 34 longform samples with this pattern).
         s_lstripped = s_text.lstrip()
+        # cycle 203 (sway directive 语句通顺优先): skip if sentence already
+        # starts with a SHORT transition marker. These come from
+        # patterns_cn.json replacements (值得注意的是→注意, 综上所述→总之,
+        # 其次→另外/此外, etc.). Stacking noise on top reads as
+        # "在我看来，注意，X..." — multiple transitions piled up, robotic.
+        # Trade: drops some LR-favorable noise, accepted per sway directive.
+        _existing_transitions = (
+            '注意，', '特别说一下，', '要提醒的是，', '总之，', '说到底，',
+            '简单讲，', '归结起来，', '另外，', '此外，', '还有，',
+            '可以看到，', '很明显，', '你会发现，',
+            '一开始，', '最初，', '起头，', '先说，',
+            '接着，', '然后，', '再就是，', '最后说一点，',
+        )
+        if s_lstripped.startswith(_existing_transitions):
+            continue
+        # cycle 203: per-paragraph injection cap = 1 (sway 语句通顺优先).
+        # Skip if this paragraph already had an injection — prevents
+        # "在我看来，X。注意，Y" cross-sentence stacking.
+        if para_injected.get(para_idx, 0) >= 1:
+            continue
+        # cycle 203 sub: also skip if the same paragraph (the one we're
+        # in, or that the current sentence will land in) already contains
+        # any of the existing-transition markers (from replacements). This
+        # catches "注意，X。" + "在我看来，Y" same-paragraph stacking
+        # where 注意 came from values_注意的是 replacement, not noise.
+        # Build the paragraph slice: all sentences sharing this paragraph.
+        para_slice = ''
+        running_para = 0
+        for j in range(len(sentences)):
+            if running_para == para_idx:
+                para_slice += sentences[j][0] + (sentences[j][1] or '')
+            running_para += (sentences[j][0] + (sentences[j][1] or '')).count('\n\n')
+            if running_para > para_idx:
+                break
+        if any(t in para_slice for t in _existing_transitions):
+            continue
         if s_lstripped.startswith('#') or s_lstripped.startswith('- ') or s_lstripped.startswith('* '):
             continue
         if s_lstripped.startswith('**'):
@@ -1550,6 +1613,8 @@ def inject_noise_expressions(text, density=0.15, style='general'):
 
         sentences[i] = [s, p]
         injected += 1
+        # cycle 203: bump per-paragraph counter for cap enforcement
+        para_injected[para_idx] = para_injected.get(para_idx, 0) + 1
 
     return ''.join(s + p for s, p in sentences)
 
@@ -2017,7 +2082,7 @@ def diversify_vocabulary(text):
         '实现': ['达到', '做到', '完成'],
         '提供': ['给出', '带来'],  # Cycle 63: dropped 拿出 (see WORD_SYNONYMS comment)
         '具有': ['有', '拥有', '带有'],
-        '进一步': ['更', '再', '深入'],
+        '进一步': ['深入'],  # cycle 203: drop 更/再 (broken in 更进一步)
         '不断': ['持续', '一直', '始终'],
         # '有效' skipped: attributive/adj usage (有效证件) breaks with verb substitutes
         '积极': ['主动', '热心'],
