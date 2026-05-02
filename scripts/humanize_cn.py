@@ -692,6 +692,15 @@ _CILIN_BLACKLIST = {
     '固化',  # 稳定 alt — "solidify" wrong meaning
     '安乐',  # 稳定 alt — "peaceful/comfortable"
     '原则性',  # 稳定 alt — "principled" wrong slot
+    # cycle 220 quality cleanup:
+    '不无',  # 具有/具备/拥有 alt — literary double-negative, "不无广阔" 错
+    '万顷',  # 广阔 alt — ancient land measure (万顷土地)
+    '周边',  # 广阔 alt — "peripheral", wrong slot for 广阔
+    '周遍',  # 广阔 alt — archaic
+    '宏阔',  # 广阔 alt — formal/literary
+    '能事',  # 能力 alt — narrow ("things one can do well")
+    '能耐',  # 能力 alt — colloquial "skill/ability"
+    '身手',  # 能力 alt — narrow ("agility/martial skill")
     '意志',  # 旨在 alt — "willpower" not "purpose", "意志提高" 错
     '心意',  # 旨在 alt — "intention" but not "aim", same slot mismatch
     '意旨',  # 旨在 alt — archaic "imperial decree"
