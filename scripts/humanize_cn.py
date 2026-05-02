@@ -1357,8 +1357,24 @@ def randomize_sentence_lengths(text, aggressive=False, seed=None):
                     '如果', '假如', '若是', '倘若', '要是', '即便', '纵然',
                     '除了', '除非', '只要', '只有', '无论', '不管',
                     '当', '每当', '一旦',
+                    # cycle 201: 面对X / 处在X = context introducer that needs
+                    # a main clause. Splitting at comma leaves a fragment.
+                    # ('在' kept out — too broad; handled by suffix guard below)
+                    '面对', '处在',
                 )
                 if first_stripped.startswith(_subordinate_prefixes):
+                    result.append(s + p)
+                    i += 1
+                    continue
+                # cycle 201: context-introducer SUFFIXES that need a main
+                # clause (covers "在X的背景下" cycle-190 alts: "...这种局面，"
+                # "...这个情境里，" "...之中，"). Catches the "在" case
+                # without blocking all "在..." sentences.
+                _context_suffixes = (
+                    '这种局面', '这种情况', '这个情境里', '这种背景下',
+                    '之中', '的背景下',
+                )
+                if first_part.endswith(_context_suffixes):
                     result.append(s + p)
                     i += 1
                     continue
