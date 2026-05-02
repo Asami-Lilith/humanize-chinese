@@ -543,6 +543,7 @@ _CILIN_BLACKLIST = {
     '规模',  # 层面/范畴 alt — wrong dimension ("scale" not "aspect")
     '升格',  # 提升 alt — "upgrade to higher class", off in skill/effort contexts
     '升级',  # 提升 alt — software/version register, off in many contexts
+    '数目字',  # 数字 alt — "数字化" → "数目字化" broken (数目字 = numerical figure)
 }
 
 
