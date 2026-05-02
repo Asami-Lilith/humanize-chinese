@@ -316,7 +316,9 @@ WORD_SYNONYMS = {
     # mismatch ('突出下降' / '突出高于' / '突出提升'). Replaced with '大幅',
     # which works as adverb of degree (118 hits in human news corpus).
     # '突出' is kept in '强调' alts where it functions as V (突出重要性).
-    '显著': ['明显', '可观', '大幅'],
+    # cycle 202: dropped '大幅' — adverb-only, "显著进展" → "大幅进展"
+    # awkward (大幅 only modifies verbs of change like 提升/下降, not nouns).
+    '显著': ['明显', '可观'],
     '问题': ['难题', '麻烦', '症结'],
     '方面': ['层面', '维度', '领域'],
     '情况': ['状况', '形势', '境况', '局面'],
