@@ -1408,11 +1408,18 @@ def randomize_sentence_lengths(text, aggressive=False, seed=None):
                     i += 1
                     continue
                 # Guard 3: skip if next clause starts with a bare causative
-                # verb (使/使得/导致/造成 etc.). "X，使得Y" → "X。使得Y" is
-                # ungrammatical because 使得 needs a subject from the previous
-                # clause to remain intact.
+                # verb (使/使得/导致/造成 etc.) OR a continuation marker
+                # (同时/此外/另外/更/不仅/而且/进而/继而/充分/进一步/同样).
+                # These all assume the prior clause's subject/context — splitting
+                # creates fragment "X。同时Y。" which reads as orphaned.
+                # cycle 206 (sway 标点符号奇怪): added 同时/充分/进一步 etc.
+                # Audit on workplace example showed pattern "工作效率，同时也Y，
+                # 充分体现Z" splitting into 3 short sentences with multiple
+                # paragraph-end periods — sway flagged as awkward.
                 _bare_continuators = (
                     '使得', '使', '导致', '引起', '造成', '致使',
+                    '同时', '同样', '此外', '另外', '更', '不仅', '而且',
+                    '进而', '继而', '充分', '进一步', '同时也',
                 )
                 rest_after_comma = s[comma_pos + 1:].lstrip()
                 if rest_after_comma.startswith(_bare_continuators):
