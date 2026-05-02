@@ -507,14 +507,33 @@ _CILIN_BLACKLIST = {
     '事体',  # 工作/事情 alt — regional dialect, off in formal text
     '本性',  # 个性 alt — "个性化" → "本性化" broken (本性 ≈ nature)
     '天性',  # 个性 alt — "个性化" → "天性化" broken
+    '生性',  # 个性 alt — "个性化" → "生性化" broken
+    '秉性',  # 个性 alt — same broken pattern
+    '赋性',  # 个性 alt — same broken pattern
     '擘画',  # 规划/计划 alt — archaic, off in modern Chinese
+    '宏图',  # 规划/计划 alt — "任务规划" → "任务宏图" wrong (宏图 = grand vision)
     '圈圈',  # 层面/局面/范畴 alt — wrong meaning ("circle")
     '框框',  # 层面/范畴 alt — wrong meaning ("frame")
+    '局面',  # 层面 alt — "各个层面" → "各个局面" awkward
     '对头',  # 正确/科学 alt — colloquial "correct/foe", semantic shift
     '不利',  # 正确/科学 alt — opposite meaning ("unfavorable")!
     '不易',  # 正确/科学 alt — unrelated ("not easy")
     '得法',  # 正确/科学 alt — narrow ("appropriate method")
     '上头',  # 方面 alt — body part ("top of head")
+    '恰切',  # 适应 alt — "自适应" → "自恰切" broken
+    '出发点',  # 角度 alt — "从角度" → "从出发点" register-narrow
+    '动用',  # 应用/使用 alt — "应用" → "动用" implies mobilizing resources
+    '深浅',  # 深度 alt — "深度学习" → "深浅学习" broken
+    '纵深',  # 深度 alt — military register, off
+    '穿越',  # 通过 alt — "通过" → "穿越" wrong (穿越 = traverse)
+    '穿过',  # 通过 alt — same wrong meaning
+    '越过',  # 通过 alt — same wrong meaning
+    '适于',  # 适应 alt — "自适应" → "自适于" broken
+    '升任',  # 提升 alt — only "promote in rank"
+    '升官',  # 提升 alt — same job-promotion narrow
+    '升迁',  # 提升 alt — same job-promotion narrow
+    '提干',  # 提升 alt — same, military/cadre register
+    '咱家',  # 个人 alt — colloquial regional ("us/me"), wrong meaning
 }
 
 
