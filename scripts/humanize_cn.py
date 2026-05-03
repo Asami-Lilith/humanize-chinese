@@ -967,6 +967,13 @@ _CILIN_BLACKLIST = {
     '放眼',  # 纵目/极目 alt — verb form; "在放眼全球" 不通 (放眼 needs object)
     '之际',  # 关键/关头 alt — archaic "at the moment of"; "之际介于我们" 不通
     '介于',  # 在于 alt — "between"; wrong meaning, "之际介于我们" wrong concept
+    # cycle 245 long_blog seed=7 audit additions:
+    '历历',  # 清晰 alt — archaic "vividly" (历历在目 idiom-only); "历历的产品构想" 不通
+    # 创-family narrow alts (after cycle 234 blocked 创设, fallback to these still narrow):
+    '创始',  # 创造 alt — "found/initiate"; narrow ("创始更具价值的产品" wrong)
+    '创办',  # 创造 alt — "start (business)"; narrow
+    '创立',  # 创造 alt — "establish"; narrow
+    '创导',  # 创造 alt — formal "advocate"; rare
 }
 
 
