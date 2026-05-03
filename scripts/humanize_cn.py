@@ -847,6 +847,9 @@ _CILIN_BLACKLIST = {
     '学童',  # 学生 alt — "young pupil" narrow age slot
     '桃李',  # 学生 alt — metaphor "students/disciples" idiom-only
     '可知',  # 能够/亦可 alt — modal mismatch ("it can be known"), not "can do"
+    # cycle 236 long_blog seed=42 audit additions:
+    '保险',  # 确保/保证 alt — "insurance" connotation; "保险产品能够" reads "insurance product"
+    '一对一', # 一定/相当 alt — completely wrong meaning ("one-on-one"); "一对一要具备" 不通
 }
 
 
