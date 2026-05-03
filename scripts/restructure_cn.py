@@ -314,11 +314,16 @@ def _build_templates():
     ))
 
     # ── 32. X已经成为Y ──
+    # cycle 224: replaced "如今是" alt with "已然是" / "早已是" — the
+    # 如今是 form was being rewritten downstream (如今 → 现在 in
+    # patterns_cn) producing "X现在是Y" which reads off ("教育现在是
+    # 学界焦点" — adverb 现在 + copula reads jarring as compound predicate).
     templates.append((
         re.compile(r'(?P<X>[^，,。\n]{2,15})已(?:经)?成为(?P<Y>[^。！？\n]{2,25})'),
         [
-            lambda m: f'{m.group("X")}如今是{m.group("Y")}',
-            lambda m: f'{m.group("X")}现在已是{m.group("Y")}',
+            lambda m: f'{m.group("X")}已然是{m.group("Y")}',
+            lambda m: f'{m.group("X")}早已是{m.group("Y")}',
+            lambda m: f'{m.group("X")}早就是{m.group("Y")}',
         ]
     ))
 
