@@ -842,6 +842,11 @@ _CILIN_BLACKLIST = {
     '促成',  # 实现 alt — "facilitate/bring about", off for "技术实现" → "技术促成"
     '兑现',  # 实现 alt — "fulfill (a promise)", narrow; "技术兑现" 不通
     '创设',  # 创造 alt — "set up institution"; "创设产品" off (institutions/laws fit, products don't)
+    # cycle 235 general seed=7 audit additions — narrow 学生 + modal-mismatched alts:
+    '学员',  # 学生 alt — "trainee" narrow, off for generic "学生" in education context
+    '学童',  # 学生 alt — "young pupil" narrow age slot
+    '桃李',  # 学生 alt — metaphor "students/disciples" idiom-only
+    '可知',  # 能够/亦可 alt — modal mismatch ("it can be known"), not "can do"
 }
 
 
@@ -881,6 +886,10 @@ _CILIN_SOURCE_BLACKLIST = {
     '不定',  # inside 说不定 / 拿不定 / 一定不定; alts (不安/动乱) corrupt parent
     '末日',  # 后期/晚期/期末 alts shift "doomsday" → "later period"
     '后期',  # 后期/晚期/期末 cluster — same shift
+    # cycle 235: 不容 cilin alts (不肯/回绝/拒绝/推却/推辞/闭门羹) all mean
+    # "refuse/decline" — wrong for 不容忽视/不容置疑 (which means "doesn't
+    # tolerate/permit"). Source blacklist since ALL alts are wrong-meaning.
+    '不容',
 }
 
 
