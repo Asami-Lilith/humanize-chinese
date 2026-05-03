@@ -850,6 +850,14 @@ _CILIN_BLACKLIST = {
     # cycle 236 long_blog seed=42 audit additions:
     '保险',  # 确保/保证 alt — "insurance" connotation; "保险产品能够" reads "insurance product"
     '一对一', # 一定/相当 alt — completely wrong meaning ("one-on-one"); "一对一要具备" 不通
+    # cycle 237 longform sample audit — 首先/其次 family bad alts:
+    '处女',  # 首先/状元/首度 alt — "maiden/virgin"; off in any modern context
+    '头条',  # 首先/状元/首度 alt — "headline"; wrong slot
+    '头版',  # 首先/首度 alt — "front page"; wrong slot
+    '排头',  # 首先/首度 alt — "front of line"; wrong slot
+    '伯仲',  # 其次 alt — "brothers/peers"; wrong slot
+    '老二',  # 其次 alt — colloquial "second son"; vulgar register
+    '第二性', # 其次 alt — Beauvoir's book "The Second Sex"; specific cultural reference
 }
 
 
