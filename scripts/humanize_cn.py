@@ -892,6 +892,35 @@ _CILIN_BLACKLIST = {
     '抓挠',  # 方法 alt — colloquial "scratch/lousy way"; wrong meaning
     '具结',  # 关系 alt — legal "guarantee in writing"; narrow
     '风味',  # 特点 alt — "flavor"; food-only
+    # cycle 240 systematic adjective family scan — wrong-meaning/colloquial alts:
+    # 深入 family:
+    '中肯',  # 深入 alt — "to the point"; different concept
+    '刻骨',  # 深入 alt — "deeply engraved"; emotional only
+    # 明显 family:
+    '扎眼',  # 明显 alt — "eye-catching" colloquial
+    '明摆着', # 明显 alt — colloquial register
+    # 清晰 family:
+    '丁是丁', # 清晰 alt — "clear-cut" colloquial idiom
+    '清丽',  # 清晰 alt — "clear and beautiful"; wrong slot
+    # 复杂 family:
+    '繁体',  # 复杂 alt — "traditional Chinese characters"; wrong slot
+    # 稳定 family:
+    '一贯',  # 稳定 alt — adverb "consistently"; wrong POS
+    '原则性', # 稳定 alt — formal noun "principled"; wrong POS
+    # 快速 family:
+    '不会儿', # 快速 alt — colloquial 北方话 "in a moment"
+    '劈手',  # 快速 alt — archaic "swiftly with hand"
+    '快当',  # 快速 alt — colloquial "quick/efficient"
+    # 准确 family:
+    '准儿',  # 准确 alt — colloquial "for sure"
+    '纯正',  # 准确 alt — "pure/authentic"; wrong slot
+    # 有效 family:
+    '中用',  # 有效 alt — colloquial "useful"
+    '合用',  # 有效 alt — narrow "fit for use"
+    # 严格 family:
+    '严词',  # 严格 alt — narrow noun "stern words"
+    # 强大 family:
+    '强压',  # 强大 alt — "suppress strongly"; wrong slot
 }
 
 
