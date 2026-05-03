@@ -921,6 +921,39 @@ _CILIN_BLACKLIST = {
     '严词',  # 严格 alt — narrow noun "stern words"
     # 强大 family:
     '强压',  # 强大 alt — "suppress strongly"; wrong slot
+    # cycle 241 systematic domain noun scan — wrong-slot/narrow alts:
+    # 经济 family (cost-effective ≠ economy):
+    '上算',  # 经济 alt — "cost-effective" colloquial
+    '划得来', # 经济 alt — "worthwhile" colloquial
+    '占便宜', # 经济 alt — "take advantage" colloquial
+    # 文化 family:
+    '双文明', # 文化 alt — specific term ("two civilizations")
+    # 产业 family (whole family means "family property", wrong slot for industry):
+    '家业',  # 产业 alt — "family business/property"
+    '家事',  # 产业 alt — "family affairs"
+    '家产',  # 产业 alt — "family assets"
+    '家底',  # 产业 alt — "family savings"
+    '家当',  # 产业 alt — "household belongings"
+    '家私',  # 产业 alt — "household goods"
+    # 行业 family:
+    '本行',  # 行业 alt — narrow "one's own line of work"
+    '正业',  # 行业 alt — idiom "proper occupation"
+    # 企业 family (specific store types ≠ enterprise):
+    '代销店', # 企业 alt — "consignment store"
+    '供销社', # 企业 alt — "supply and marketing cooperative"
+    '信用社', # 企业 alt — "credit union"
+    '合作社', # 企业 alt — "cooperative"
+    '商厦',  # 企业 alt — "commercial building"
+    # 政府 family:
+    '内阁',  # 政府 alt — narrow "cabinet"
+    # 国家 family (archaic poetic):
+    '江山',  # 国家 alt — "rivers and mountains"; poetic
+    '社稷',  # 国家 alt — "altars to gods of soil/grain"; archaic
+    # 世界 family:
+    '世道',  # 世界 alt — "ways of the world"; archaic
+    '世风',  # 世界 alt — "social mores"; archaic
+    '中外',  # 世界 alt — "Chinese and foreign"; wrong slot
+    '五洲',  # 世界 alt — "five continents"; archaic
 }
 
 
