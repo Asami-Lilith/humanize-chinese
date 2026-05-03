@@ -954,6 +954,11 @@ _CILIN_BLACKLIST = {
     '世风',  # 世界 alt — "social mores"; archaic
     '中外',  # 世界 alt — "Chinese and foreign"; wrong slot
     '五洲',  # 世界 alt — "five continents"; archaic
+    # cycle 242: 频率 fixes "时间管理频率" → "时间管理效率"; cascade
+    # protected via 轻重 _CILIN_SOURCE_BLACKLIST (idiom 轻重缓急) and
+    # 生气 blacklist (精力 alt — primarily means "anger", off in vitality slot).
+    '频率',  # 效率 alt — different meaning ("frequency")
+    '生气',  # 精力 alt — primarily means "anger"; "时间和生气" 不通
 }
 
 
@@ -997,6 +1002,14 @@ _CILIN_SOURCE_BLACKLIST = {
     # "refuse/decline" — wrong for 不容忽视/不容置疑 (which means "doesn't
     # tolerate/permit"). Source blacklist since ALL alts are wrong-meaning.
     '不容',
+    # cycle 242: 轻重 cilin alts (份量/份额/净重/分寸/分量/千粒重) all are
+    # weight/measure terms; none fit the idiom 轻重缓急 (priority/important).
+    # Source blacklist since substitution always breaks the idiom.
+    '轻重',
+    # cycle 242: 精力 cilin alts (元气/活力/生命力/生机/生气/肥力) all in
+    # vitality family; "时间和精力" is set idiom, any substitution lands
+    # on awkward "时间和生气/生机/活力". Block source.
+    '精力',
 }
 
 
