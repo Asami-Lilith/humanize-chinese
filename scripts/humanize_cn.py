@@ -838,6 +838,10 @@ _CILIN_BLACKLIST = {
     '变故',  # 变化 alt — "mishap/misfortune" too negative for generic context
     '变型',  # 变化 alt — likely typo of 变形, narrow material-science slot
     '切变',  # 变化 alt — physics term ("shear"), wrong slot for generic 变化
+    # cycle 234 long_blog seed=7 audit additions — narrow 实现/创造 cilin alts:
+    '促成',  # 实现 alt — "facilitate/bring about", off for "技术实现" → "技术促成"
+    '兑现',  # 实现 alt — "fulfill (a promise)", narrow; "技术兑现" 不通
+    '创设',  # 创造 alt — "set up institution"; "创设产品" off (institutions/laws fit, products don't)
 }
 
 
