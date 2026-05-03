@@ -2257,10 +2257,43 @@ def vary_paragraph_rhythm(text):
             return True
         return False
 
+    # cycle 226 N-2d: enumeration markers AS THEY SURVIVE the upstream
+    # remove_three_part_structure (strips 首先/其次/最后; replaces 其次→
+    # 另外/此外/'') and replace_phrases (此外→还有/再说/加之, 综上所述→
+    # 总之/说到底/简单讲). The AI long-form pattern is "each enumerator
+    # gets its own paragraph" — so the surviving paragraph heads are what
+    # we want to merge into the previous block to break that rhythm.
+    _ENUM_PARA_HEADS = (
+        '综上', '此外', '另外', '总之', '总的来说', '总而言之', '再者',
+        '还有', '接着', '然后', '再就是', '加之', '再说', '说到底', '简单讲',
+    )
+
+    def _starts_enum(p):
+        s = p.lstrip()
+        for m in _ENUM_PARA_HEADS:
+            if s.startswith(m + '，') or s.startswith(m + ',') or s.startswith(m + '、'):
+                return True
+        return False
+
     result = []
     i = 0
     while i < len(paragraphs):
         para = paragraphs[i]
+
+        # Enum-marker preferential merge (N-2d): if the NEXT paragraph starts
+        # with a surviving enumeration head, merge into current with combined
+        # length cap to avoid mega-paragraphs. Length cap 2.5x avg keeps the
+        # merged block within human plausible range.
+        if (i + 1 < len(paragraphs) and
+            _starts_enum(paragraphs[i + 1]) and
+            not _is_md_header(para) and
+            not _is_md_header(paragraphs[i + 1]) and
+            len(para) + len(paragraphs[i + 1]) < avg_len * 2.5 and
+            random.random() < 0.45):
+            merged = para + '\n' + paragraphs[i + 1]
+            result.append(merged)
+            i += 2
+            continue
 
         # Randomly merge short adjacent paragraphs (skip markdown headers /
         # bullet items — those are deliberately short structural markers).
