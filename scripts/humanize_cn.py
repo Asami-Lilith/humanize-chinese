@@ -826,6 +826,9 @@ _CILIN_BLACKLIST = {
     '奇怪',  # 惊叹 alt — "strange"
     '希罕',  # 惊叹 alt — "rare/curious"
     '惊呆',  # 惊叹 alt — narrow "stunned"
+    # cycle 230 long_blog audit additions:
+    '上心',  # 专注 alt — verb "take to heart"; "上心于X" 不通 (上心 doesn't take 于)
+    '寻常',  # 通常 alt — literary "ordinary"; "数据寻常用于" reads off-register
 }
 
 
