@@ -974,6 +974,14 @@ _CILIN_BLACKLIST = {
     '创办',  # 创造 alt — "start (business)"; narrow
     '创立',  # 创造 alt — "establish"; narrow
     '创导',  # 创造 alt — formal "advocate"; rare
+    # cycle 246 academic carbon trading audit additions:
+    '企图',  # 作用 alt — "attempt/scheme"; "发挥重要企图" 不通
+    # 手段 family — 一手/伎俩/心数/心眼/手眼 all colloquial/derogatory/idiom:
+    '一手',  # 手段 alt — colloquial "trick/one hand"
+    '伎俩',  # 手段 alt — negative "trick/scheme"
+    '心数',  # 手段 alt — wrong slot ("mind/wits")
+    '心眼',  # 手段 alt — wrong slot ("mind/heart")
+    '手眼',  # 手段 alt — idiom-only ("手眼通天")
 }
 
 
@@ -1028,6 +1036,10 @@ _CILIN_SOURCE_BLACKLIST = {
     # cycle 243: 可以 cilin alts (上上/上佳/上好/不含糊/不离儿/不赖) all are
     # colloquial "good/fine"; none works as modal "可以" (can/may). Block source.
     '可以',
+    # cycle 246: 温室 cilin alts (花房/保暖棚/大棚/暖房/暖棚/温棚) all are
+    # physical greenhouse types; "温室气体" is fixed scientific term, ANY
+    # substitution breaks it ("花房气体" → "flower-house gas" 错). Block source.
+    '温室',
 }
 
 
