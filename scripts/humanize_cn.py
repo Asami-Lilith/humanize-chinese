@@ -832,6 +832,12 @@ _CILIN_BLACKLIST = {
     # cycle 231 general/workplace audit additions:
     '推向',  # 推动 alt — needs directional object; "推向教育的大趋势" 不通
              # (推向 expects target/level: "推向更高水平"; not abstract "X的大趋势")
+    # cycle 232 long_blog seed=1 audit additions — bad alts in 变化 family:
+    '变卦',  # 变化 alt — narrow ("renege on agreement"); "动态变卦" 不通
+    '事变',  # 变化 alt — historical event ("七七事变"); wrong slot for generic 变化
+    '变故',  # 变化 alt — "mishap/misfortune" too negative for generic context
+    '变型',  # 变化 alt — likely typo of 变形, narrow material-science slot
+    '切变',  # 变化 alt — physics term ("shear"), wrong slot for generic 变化
 }
 
 
