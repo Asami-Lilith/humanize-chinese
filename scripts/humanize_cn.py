@@ -959,6 +959,10 @@ _CILIN_BLACKLIST = {
     # 生气 blacklist (精力 alt — primarily means "anger", off in vitality slot).
     '频率',  # 效率 alt — different meaning ("frequency")
     '生气',  # 精力 alt — primarily means "anger"; "时间和生气" 不通
+    # cycle 243 longform blog audit additions:
+    '上上',  # 可以 alt — colloquial "tops/very good"; modal mismatch ("上上在最大限度地" 不通)
+    '分红',  # 分配 alt — financial "dividend"; "资源分红" 不通
+    '不等',  # 不同 alt — "unequal" different concept; "不等的服务节点" 不通
 }
 
 
@@ -1010,6 +1014,9 @@ _CILIN_SOURCE_BLACKLIST = {
     # vitality family; "时间和精力" is set idiom, any substitution lands
     # on awkward "时间和生气/生机/活力". Block source.
     '精力',
+    # cycle 243: 可以 cilin alts (上上/上佳/上好/不含糊/不离儿/不赖) all are
+    # colloquial "good/fine"; none works as modal "可以" (can/may). Block source.
+    '可以',
 }
 
 
