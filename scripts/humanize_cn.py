@@ -963,6 +963,10 @@ _CILIN_BLACKLIST = {
     '上上',  # 可以 alt — colloquial "tops/very good"; modal mismatch ("上上在最大限度地" 不通)
     '分红',  # 分配 alt — financial "dividend"; "资源分红" 不通
     '不等',  # 不同 alt — "unequal" different concept; "不等的服务节点" 不通
+    # cycle 244 longform blog audit additions:
+    '放眼',  # 纵目/极目 alt — verb form; "在放眼全球" 不通 (放眼 needs object)
+    '之际',  # 关键/关头 alt — archaic "at the moment of"; "之际介于我们" 不通
+    '介于',  # 在于 alt — "between"; wrong meaning, "之际介于我们" wrong concept
 }
 
 
