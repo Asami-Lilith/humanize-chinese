@@ -858,6 +858,29 @@ _CILIN_BLACKLIST = {
     '伯仲',  # 其次 alt — "brothers/peers"; wrong slot
     '老二',  # 其次 alt — colloquial "second son"; vulgar register
     '第二性', # 其次 alt — Beauvoir's book "The Second Sex"; specific cultural reference
+    # cycle 238 systematic word-family scan — 形成/帮助/需要/降低/考虑 wrong-slot alts:
+    # 形成 family (all alts mean "achieve/in-place/mutate"; none fits "form/take shape"):
+    '做到',  # 形成 alt — "achieve"; "形成共识" → "做到共识" 不通 (also in WORD_SYNONYMS 实现 alts, that path unaffected)
+    '变异',  # 形成 alt — biology "mutation"; wrong slot
+    '善变',  # 形成 alt — character trait "fickle"; wrong POS
+    '多变',  # 形成 alt — adjective "changeable"; wrong POS
+    # 帮助 family wrong-meaning alts:
+    '佑助',  # 帮助 alt — literary "bless and help"; archaic
+    '匡助',  # 帮助 alt — formal "assist (the upright)"; archaic register
+    '匡扶',  # 帮助 alt — "support (the righteous)"; archaic political register
+    '受助',  # 帮助 alt — OPPOSITE direction! "receive help"
+    '增援',  # 帮助 alt — military "reinforce"; wrong slot
+    # 需要 family wrong-slot alts:
+    '内需',  # 需要 alt — "domestic demand" (economic noun); wrong slot
+    '特需',  # 需要 alt — "special needs" (medical/service noun); wrong slot
+    '索要',  # 需要 alt — "demand insistently"; wrong tone
+    # 降低 family financial-narrow alts:
+    '下挫',  # 降低 alt — financial "drop sharply"; narrow
+    '下滑',  # 降低 alt — financial/sports "decline"; narrow
+    '下跌',  # 降低 alt — financial "fall"; narrow
+    '低落',  # 降低 alt — emotional "in low spirits"; wrong slot
+    # 考虑 family wrong-meaning alts:
+    '合计',  # 考虑 alt — "calculate/sum up"; wrong meaning
 }
 
 
