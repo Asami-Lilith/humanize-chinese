@@ -881,6 +881,17 @@ _CILIN_BLACKLIST = {
     '低落',  # 降低 alt — emotional "in low spirits"; wrong slot
     # 考虑 family wrong-meaning alts:
     '合计',  # 考虑 alt — "calculate/sum up"; wrong meaning
+    # cycle 239 systematic word-family scan continued — 收集/工作/问题/方法/关系/特点:
+    '募集',  # 收集 alt — "raise funds"; narrow financial
+    '筹募',  # 收集 alt — "fundraise"; narrow financial
+    '收载',  # 收集 alt — "include/contain (in book)"; wrong slot
+    '综采',  # 收集 alt — "synthesize and extract"; archaic
+    '专职',  # 工作 alt — "professional/full-time" noun; wrong slot
+    '作业',  # 工作 alt — "homework/operations"; different concept
+    '事故',  # 问题 alt — "accident/incident"; wrong slot for generic 问题
+    '抓挠',  # 方法 alt — colloquial "scratch/lousy way"; wrong meaning
+    '具结',  # 关系 alt — legal "guarantee in writing"; narrow
+    '风味',  # 特点 alt — "flavor"; food-only
 }
 
 
