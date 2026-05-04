@@ -1097,6 +1097,9 @@ _CILIN_BLACKLIST = {
     # / "迎来尤其充实和有意义的人生" (social hero) reads off; should be
     # intensifier "更加充实".
     '尤其',
+    # 何如 (alt of 如何/什么/怎样) is 文言 "how about" — wrong slot for direct
+    # interrogative; "何如解决" 不通.
+    '何如',
 }
 
 
