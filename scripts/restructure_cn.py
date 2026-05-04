@@ -1016,7 +1016,16 @@ def insert_short_reactions(text, target_short_frac=None, max_per_paragraph=1, se
     # unchanged.
     n_md_headers = sum(1 for line in text.split('\n')
                        if re.match(r'^\s*#{1,6}\s', line))
-    if n_md_headers >= 2 and scene != 'social':
+    # Academic register auto-detection: prose lacking markdown headers may
+    # still warrant the formal reaction pool. Markers below appear densely in
+    # research/academic writing; threshold 2 catches sample_academic.txt
+    # without firing on casual prose that happens to mention "研究".
+    _ACADEMIC_MARKERS = ('本研究', '本文', '研究表明', '研究目的', '理论意义',
+                         '实践价值', '研究方法', '综合来看', '由此可见',
+                         '本课题', '研究内容', '结果表明', '研究表明',
+                         '发挥重要', '具有重要', '应用机制')
+    n_academic = sum(1 for m in _ACADEMIC_MARKERS if m in text)
+    if (n_md_headers >= 2 or n_academic >= 2) and scene != 'social':
         scene = 'formal'
     if target_short_frac is None:
         target_short_frac = 0.22 if scene == 'academic' else 0.15
