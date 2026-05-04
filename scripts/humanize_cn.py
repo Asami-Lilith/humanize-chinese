@@ -234,7 +234,7 @@ WORD_SYNONYMS = {
     # in tech/business context "呈上聊天功能" / "呈上食物" reads off.
     # Already in _CILIN_BLACKLIST but WORD_SYNONYMS path bypassed.
     '提供': ['给出', '给予'],
-    '分析': ['剖析', '解读', '拆解'],  # cycle 205: drop 审视 (same as 研究 alt)
+    '分析': ['剖析', '解读'],  # cycle 205: drop 审视; heartbeat: drop 拆解
     '促进': ['推动', '助推', '带动', '催动'],
     '利用': ['借用', '运用', '动用', '凭借'],
     '建立': ['搭建', '构筑', '组建', '创设'],
