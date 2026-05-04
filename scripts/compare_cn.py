@@ -12,17 +12,17 @@ import argparse
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def run_detect(text, as_json=True):
+def run_detect(text, as_json=True, timeout=30):
     """Run detect_cn.py and get results"""
     detect_script = os.path.join(SCRIPT_DIR, 'detect_cn.py')
-    cmd = ['python3', detect_script]
+    cmd = [sys.executable, detect_script]
     if as_json:
         cmd.append('-j')
     
     try:
         result = subprocess.run(
             cmd, input=text, capture_output=True,
-            text=True, encoding='utf-8', timeout=30
+            text=True, encoding='utf-8', timeout=timeout
         )
         if as_json and result.returncode == 0:
             return json.loads(result.stdout)
@@ -30,10 +30,12 @@ def run_detect(text, as_json=True):
     except Exception as e:
         return {'error': str(e)}
 
-def run_humanize(text, scene='general', aggressive=False, style=None):
+def run_humanize(text, scene='general', aggressive=False, style=None,
+                 best_of_n=1, timeout=30):
     """Run humanize_cn.py and get result"""
     humanize_script = os.path.join(SCRIPT_DIR, 'humanize_cn.py')
-    cmd = ['python3', humanize_script, '--scene', scene]
+    cmd = [sys.executable, humanize_script, '--scene', scene,
+           '--best-of-n', str(best_of_n)]
     if aggressive:
         cmd.append('-a')
     if style:
@@ -42,7 +44,7 @@ def run_humanize(text, scene='general', aggressive=False, style=None):
     try:
         result = subprocess.run(
             cmd, input=text, capture_output=True,
-            text=True, encoding='utf-8', timeout=30
+            text=True, encoding='utf-8', timeout=timeout
         )
         return result.stdout
     except Exception as e:
@@ -122,6 +124,10 @@ def main():
                        help='场景')
     parser.add_argument('--style', help='写作风格')
     parser.add_argument('-a', '--aggressive', action='store_true', help='激进模式')
+    parser.add_argument('--best-of-n', type=int, default=1, metavar='N',
+                       help='改写候选数量（默认 1；需要更低分时可显式设 10）')
+    parser.add_argument('--timeout', type=float, default=30,
+                       help='每个子步骤超时时间，秒（默认 30）')
     
     args = parser.parse_args()
     
@@ -142,15 +148,17 @@ def main():
     
     # Detect original
     print('⏳ 检测原文...')
-    before = run_detect(original_text, as_json=True)
+    before = run_detect(original_text, as_json=True, timeout=args.timeout)
     
     # Humanize
     print('⏳ 人性化改写...')
-    humanized_text = run_humanize(original_text, args.scene, args.aggressive, args.style)
+    humanized_text = run_humanize(original_text, args.scene, args.aggressive,
+                                  args.style, best_of_n=args.best_of_n,
+                                  timeout=args.timeout)
     
     # Detect humanized
     print('⏳ 检测改写后...')
-    after = run_detect(humanized_text, as_json=True)
+    after = run_detect(humanized_text, as_json=True, timeout=args.timeout)
     
     # Show comparison
     if isinstance(before, dict) and isinstance(after, dict) and 'error' not in before:
