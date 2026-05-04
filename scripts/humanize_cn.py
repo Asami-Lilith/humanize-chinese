@@ -3119,7 +3119,7 @@ def _estimate_source_aiscore(text):
         return None
 
 
-DEFAULT_BEST_OF_N = 10
+DEFAULT_BEST_OF_N = 20
 DEFAULT_SECONDARY_WEIGHT = 0.2
 
 
