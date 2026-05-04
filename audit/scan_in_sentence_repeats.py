@@ -105,13 +105,13 @@ def humanize_file(path: str) -> str:
 
 
 def humanize_text(text: str) -> str:
-    """Run humanize_cn on stdin text."""
+    """Run humanize_cn on stdin text (no file arg → reads stdin)."""
     env = dict(os.environ)
     env.setdefault('PYTHONHASHSEED', '0')
     out = subprocess.run(
-        [sys.executable, 'scripts/humanize_cn.py', '-', '--seed', '42'],
+        [sys.executable, 'scripts/humanize_cn.py', '--seed', '42'],
         cwd=str(REPO), capture_output=True, text=True, env=env,
-        input=text, timeout=120,
+        input=text, timeout=180,
     )
     return out.stdout
 
@@ -128,6 +128,10 @@ def main():
     ap.add_argument('--examples', action='store_true', help='Scan examples/sample_*.txt')
     ap.add_argument('--hc3', type=int, default=0,
                     help='Also scan first N HC3 ChatGPT samples (humanized)')
+    ap.add_argument('--longform', type=int, default=0,
+                    help='Scan N AI longform corpus samples starting at --longform-start')
+    ap.add_argument('--longform-start', type=int, default=0,
+                    help='Index to start longform scan from (default 0)')
     ap.add_argument('--min-count', type=int, default=2)
     ap.add_argument('--diff', action='store_true',
                     help='Only flag bigrams whose count went UP after humanize')
@@ -173,6 +177,27 @@ def main():
             src = p.read_text()
             out = humanize_file(str(p))
             process(name, src, out)
+
+    if args.longform > 0:
+        # Longform corpus lives one level above repo too
+        lf_path = REPO.parent.parent / 'data' / 'ai_longform_corpus.jsonl'
+        if not lf_path.exists():
+            lf_path = REPO / 'data' / 'ai_longform_corpus.jsonl'
+        if lf_path.exists():
+            with lf_path.open() as f:
+                for i, line in enumerate(f):
+                    if i < args.longform_start:
+                        continue
+                    if i >= args.longform_start + args.longform:
+                        break
+                    rec = json.loads(line)
+                    text = rec.get('text') or rec.get('content') or ''
+                    if len(text) < 200:
+                        continue
+                    genre = rec.get('genre', '?')
+                    print(f'humanize longform {i} ({genre})...', file=sys.stderr)
+                    out = humanize_text(text)
+                    process(f'lf:{i}:{genre}', text, out)
 
     if args.hc3 > 0:
         # HC3 lives one level above repo (claudeclaw/humanize/data/)
