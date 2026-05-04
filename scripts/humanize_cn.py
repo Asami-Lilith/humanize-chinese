@@ -3048,32 +3048,22 @@ def main():
     
     # Humanize
     result = humanize(text, args.scene, args.aggressive, args.seed,
-                       best_of_n=args.best_of_n)
+                       best_of_n=args.best_of_n, style=args.style)
     
     # Apply style if specified
     if args.style:
-        import subprocess
-        style_script = os.path.join(SCRIPT_DIR, 'style_cn.py')
-        
-        if os.path.exists(style_script):
-            import tempfile
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as tmp:
-                tmp.write(result)
-                tmp_path = tmp.name
-            
+        try:
+            from style_cn import apply_style
+        except ImportError:
             try:
-                proc = subprocess.run(
-                    ['python3', style_script, tmp_path, '--style', args.style],
-                    capture_output=True, text=True, encoding='utf-8'
-                )
-                if proc.returncode == 0 and proc.stdout.strip():
-                    result = proc.stdout
-                else:
-                    print(f'警告: 风格转换失败: {proc.stderr}', file=sys.stderr)
-            finally:
-                os.unlink(tmp_path)
+                from scripts.style_cn import apply_style
+            except ImportError:
+                apply_style = None
+
+        if apply_style:
+            result = apply_style(result, args.style, humanize_first=False, seed=args.seed)
         else:
-            print(f'警告: 未找到风格转换脚本', file=sys.stderr)
+            print('警告: 未找到风格转换模块', file=sys.stderr)
     
     # Output
     if args.output:
