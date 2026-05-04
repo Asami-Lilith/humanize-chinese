@@ -364,6 +364,7 @@ python scripts/academic_cn.py 论文.txt -o 改后.txt -a --compare
 ./humanize academic [file] [-o out] [--detect-only] [-a] [--compare] [--quick]
 ./humanize style    [file] --style S [-o out] [--no-humanize]
 ./humanize compare  [file] [-o out] [--scene S] [-a]
+./humanize doctor
 ```
 
 等价的独立脚本形式：
@@ -374,6 +375,7 @@ python scripts/humanize_cn.py [file] ...
 python scripts/academic_cn.py [file] ...
 python scripts/style_cn.py [file] --style S ...
 python scripts/compare_cn.py [file] ...
+python scripts/check_assets.py
 ```
 
 | 参数 | 说明 |
@@ -394,6 +396,28 @@ python scripts/compare_cn.py [file] ...
 | `--secondary-weight` | secondary signal 权重（默认 0.2，0 关闭） |
 | `--compare` | 改写前后双评分对比（academic） |
 | `--no-humanize` | style 转换前不先去 AI 词 |
+
+### 数据资产状态
+
+fresh clone 可以离线运行，不会自动联网下载数据。但 3 份本地高阶 ngram 频率表不入库：
+
+- `scripts/ngram_freq_cn_human.json`：启用 Binoculars-like `bino_lp_diff`，也影响 best-of-n secondary signal。
+- `scripts/ngram_freq_cn_wiki.json`：启用 `wiki_vs_human` / `wiki_vs_primary` LR 特征。
+- `scripts/ngram_freq_cn_news.json`：启用 `news_vs_human` LR 特征。
+
+缺少这些文件时程序会 graceful fallback，相关特征按 0.0 处理；detect/rewrite 不会崩，但 LR 分数、best-of-n 排序和 README hero 分数可能与完整本地资产环境不同。查看当前状态：
+
+```bash
+./humanize doctor
+```
+
+如需完整资产，请先准备本地语料，再离线重训：
+
+```bash
+python scripts/train_ngram_human.py
+python scripts/train_ngram_wiki.py
+python scripts/train_ngram_news.py
+```
 
 ---
 

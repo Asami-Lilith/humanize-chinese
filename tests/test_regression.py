@@ -20,6 +20,7 @@ from humanize_cn import (  # noqa: E402
 )
 from detect_cn import calculate_score, detect_patterns  # noqa: E402
 from ngram_model import compute_lr_score  # noqa: E402
+import ngram_model  # noqa: E402
 
 
 # Floors are upper bounds (lower fused score = better humanization). Set to
@@ -87,10 +88,52 @@ class RegressionTests(unittest.TestCase):
     def test_pick_lr_scene(self):
         academic = '本研究说明了一个问题。研究表明，这个变量会影响样本。'
         longform = '普通文本' * 400
+        long_academic = ('本研究说明了一个问题。研究表明，这个变量会影响样本。' +
+                         '普通文本' * 400)
+        mixed_ascii = '普通文本' * 125 + (' ASCII markdown reference [1]' * 60)
         general = '普通文本，只有一个研究表明 marker。'
         self.assertEqual(_pick_lr_scene(academic), 'academic')
         self.assertEqual(_pick_lr_scene(longform), 'longform')
+        self.assertEqual(_pick_lr_scene(long_academic), 'longform')
+        self.assertEqual(_pick_lr_scene(mixed_ascii), 'general')
         self.assertEqual(_pick_lr_scene(general), 'general')
+
+    def test_optional_ngram_missing_smoke(self):
+        text = '这是一段用于验证 fresh clone 路径的短中文文本。它应该可以正常检测，也可以正常改写。'
+        original = (
+            ngram_model._HUMAN_FREQ_FILE,
+            ngram_model._WIKI_FREQ_FILE,
+            ngram_model._NEWS_FREQ_FILE,
+            ngram_model._HUMAN_FREQ_CACHE,
+            ngram_model._WIKI_FREQ_CACHE,
+            ngram_model._NEWS_FREQ_CACHE,
+        )
+        try:
+            missing = str(ROOT / 'scripts' / '__missing_optional_ngram__.json')
+            ngram_model._HUMAN_FREQ_FILE = missing
+            ngram_model._WIKI_FREQ_FILE = missing
+            ngram_model._NEWS_FREQ_FILE = missing
+            ngram_model._HUMAN_FREQ_CACHE = None
+            ngram_model._WIKI_FREQ_CACHE = None
+            ngram_model._NEWS_FREQ_CACHE = None
+
+            analysis = ngram_model.analyze_text(text)
+            self.assertFalse((analysis.get('bino') or {}).get('available'))
+            self.assertFalse((analysis.get('wiki') or {}).get('available'))
+            self.assertFalse((analysis.get('news') or {}).get('available'))
+            self.assertIsNotNone(compute_lr_score(text))
+
+            rewritten = humanize(text, seed=42, best_of_n=None)
+            self.assertIn('验证', rewritten)
+        finally:
+            (
+                ngram_model._HUMAN_FREQ_FILE,
+                ngram_model._WIKI_FREQ_FILE,
+                ngram_model._NEWS_FREQ_FILE,
+                ngram_model._HUMAN_FREQ_CACHE,
+                ngram_model._WIKI_FREQ_CACHE,
+                ngram_model._NEWS_FREQ_CACHE,
+            ) = original
 
     def test_longform_mutations_safe(self):
         text = (ROOT / 'examples' / 'sample_long_blog.txt').read_text(encoding='utf-8')

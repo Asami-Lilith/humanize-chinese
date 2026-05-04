@@ -44,6 +44,12 @@ _ACADEMIC_LR_MARKERS = (
     '假设',
 )
 
+_LONGFORM_LR_CN_CHAR_THRESHOLD = 1500
+
+
+def _count_chinese_chars(text):
+    return sum(1 for c in text if '\u4e00' <= c <= '\u9fff')
+
 # Import n-gram statistical model for perplexity feedback
 try:
     from ngram_model import analyze_text as ngram_analyze
@@ -3251,10 +3257,10 @@ def _compute_secondary_signal(text):
 def _pick_lr_scene(text):
     """Pick the LR scorer used to rank best-of-n candidates."""
     academic_hits = sum(1 for marker in _ACADEMIC_LR_MARKERS if marker in text)
+    if _count_chinese_chars(text) >= _LONGFORM_LR_CN_CHAR_THRESHOLD:
+        return 'longform'
     if academic_hits >= 2:
         return 'academic'
-    if len(text) >= 1500:
-        return 'longform'
     return 'general'
 
 
