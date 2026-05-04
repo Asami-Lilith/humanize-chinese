@@ -22,6 +22,27 @@ _USE_NOISE = True
 # via --cilin CLI flag.
 _USE_CILIN = False
 
+_ACADEMIC_LR_MARKERS = (
+    '本研究',
+    '研究表明',
+    '理论意义',
+    '实践价值',
+    '研究发现',
+    '研究结果',
+    '研究对象',
+    '研究方法',
+    '文献综述',
+    '实证分析',
+    '理论框架',
+    '学术价值',
+    '现实意义',
+    '实践意义',
+    '变量',
+    '样本',
+    '模型',
+    '假设',
+)
+
 # Import n-gram statistical model for perplexity feedback
 try:
     from ngram_model import analyze_text as ngram_analyze
@@ -2779,7 +2800,29 @@ def _estimate_source_aiscore(text):
 DEFAULT_BEST_OF_N = 10
 
 
-def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAULT_BEST_OF_N, style=None):
+def _pick_lr_scene(text):
+    """Pick the LR scorer used to rank best-of-n candidates."""
+    academic_hits = sum(1 for marker in _ACADEMIC_LR_MARKERS if marker in text)
+    if academic_hits >= 2:
+        return 'academic'
+    if len(text) >= 1500:
+        return 'longform'
+    return 'general'
+
+
+def _format_best_of_debug(seed, scene_picked, lr_scores, fused_score, top_contribs):
+    top = ', '.join(f'{name}={value:+.2f}' for name, value in top_contribs[:3])
+    return (
+        f'best_of_n seed={seed} scene_picked={scene_picked} '
+        f'LR_general={lr_scores.get("general", "NA")} '
+        f'LR_academic={lr_scores.get("academic", "NA")} '
+        f'LR_longform={lr_scores.get("longform", "NA")} '
+        f'fused={fused_score} top_3_contributions=[{top}]'
+    )
+
+
+def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAULT_BEST_OF_N,
+             style=None, debug_best_of_n=False, score_mode='lr'):
     """Apply all humanization transformations in order.
 
     Graduated intensity based on source AI-score (pre-detect):
@@ -2789,9 +2832,9 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
     Aggressive flag forces 'full' tier.
 
     best_of_n: if set to an integer, runs humanize N times with different seeds
-    and returns the output that scores lowest on the LR ensemble (requires
-    scripts/lr_coef_cn.json). Useful when minimizing LR score matters more
-    than latency.
+    and returns the output that scores lowest on the scene-aware LR ensemble
+    (requires scripts/lr_coef_*.json). Useful when minimizing LR score matters
+    more than latency.
 
     Rationale: HC3 benchmark showed that full pipeline on already-clean text
     (source score < 15) adds spurious AI patterns (段落均匀/熵低) via noise
@@ -2802,17 +2845,50 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
             from ngram_model import compute_lr_score
         except ImportError:
             from scripts.ngram_model import compute_lr_score
+        if score_mode not in ('lr', 'fused', 'lr+rule'):
+            raise ValueError('score_mode must be one of: lr, fused, lr+rule')
+        detect_for_rule = None
+        if score_mode in ('fused', 'lr+rule') or debug_best_of_n:
+            try:
+                from detect_cn import calculate_score, detect_patterns
+            except ImportError:
+                from scripts.detect_cn import calculate_score, detect_patterns
+            detect_for_rule = (calculate_score, detect_patterns)
         base_seed = seed if seed is not None else 42
         candidates = []
         for i in range(best_of_n):
             s = base_seed + i
             out = humanize(text, scene=scene, aggressive=aggressive,
                            seed=s, best_of_n=None, style=style)
-            lr = compute_lr_score(out)
+            lr_scene = _pick_lr_scene(out)
+            lr = compute_lr_score(out, scene=lr_scene)
             score = lr['score'] if lr else 50
-            candidates.append((score, s, out))
-        candidates.sort(key=lambda x: x[0])
-        return candidates[0][2]
+            rule_score = 0
+            if detect_for_rule:
+                calculate_score, detect_patterns = detect_for_rule
+                issues, metrics = detect_patterns(out)
+                rule_score = calculate_score(issues, metrics)
+            fused = round(0.8 * score + 0.2 * rule_score)
+            if score_mode == 'fused':
+                rank_score = fused
+                rank_tiebreak = score
+            elif score_mode == 'lr+rule':
+                rank_score = score
+                rank_tiebreak = rule_score
+            else:
+                rank_score = score
+                rank_tiebreak = 0
+            if debug_best_of_n:
+                lr_scores = {}
+                for debug_scene in ('general', 'academic', 'longform'):
+                    debug_lr = compute_lr_score(out, scene=debug_scene)
+                    lr_scores[debug_scene] = debug_lr['score'] if debug_lr else 'NA'
+                top_contribs = lr.get('top_contributions', []) if lr else []
+                print(_format_best_of_debug(s, lr_scene, lr_scores, fused, top_contribs),
+                      file=sys.stderr)
+            candidates.append((rank_score, rank_tiebreak, s, out))
+        candidates.sort(key=lambda x: (x[0], x[1], x[2]))
+        return candidates[0][3]
 
     if seed is not None:
         random.seed(seed)
@@ -3033,6 +3109,10 @@ def main():
     parser.add_argument('--seed', type=int, help='随机种子（可复现）')
     parser.add_argument('--best-of-n', type=int, default=DEFAULT_BEST_OF_N, metavar='N',
                         help=f'运行 N 次 humanize 取 LR 分数最低的那次（默认 {DEFAULT_BEST_OF_N}，N 倍延迟，0 关闭）')
+    parser.add_argument('--debug-best-of-n', action='store_true',
+                       help='打印 best-of-n 每个候选的 LR scene、分数和主要贡献（stderr）')
+    parser.add_argument('--score-mode', default='lr', choices=['lr', 'fused', 'lr+rule'],
+                       help='best-of-n 排序方式：lr=scene-aware LR；fused=0.8*LR+0.2*rule；lr+rule=LR 优先、rule 打破平局')
     parser.add_argument('--no-stats', action='store_true',
                        help='跳过统计优化（困惑度反馈），回退到纯规则替换')
     parser.add_argument('--no-noise', action='store_true',
@@ -3073,7 +3153,9 @@ def main():
     
     # Humanize
     result = humanize(text, args.scene, args.aggressive, args.seed,
-                       best_of_n=args.best_of_n, style=args.style)
+                       best_of_n=args.best_of_n, style=args.style,
+                       debug_best_of_n=args.debug_best_of_n,
+                       score_mode=args.score_mode)
     
     # Apply style if specified
     if args.style:

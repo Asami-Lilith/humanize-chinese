@@ -12,7 +12,7 @@ if str(SCRIPTS) not in sys.path:
 os.environ.setdefault('PYTHONHASHSEED', '0')
 
 from _text_utils import split_paragraphs  # noqa: E402
-from humanize_cn import humanize  # noqa: E402
+from humanize_cn import _pick_lr_scene, humanize  # noqa: E402
 from detect_cn import calculate_score, detect_patterns  # noqa: E402
 from ngram_model import compute_lr_score  # noqa: E402
 
@@ -78,6 +78,14 @@ class RegressionTests(unittest.TestCase):
         for text in ['', '   ', '\n\n\n']:
             with self.subTest(repr=repr(text)):
                 humanize(text, seed=42)
+
+    def test_pick_lr_scene(self):
+        academic = '本研究说明了一个问题。研究表明，这个变量会影响样本。'
+        longform = '普通文本' * 400
+        general = '普通文本，只有一个研究表明 marker。'
+        self.assertEqual(_pick_lr_scene(academic), 'academic')
+        self.assertEqual(_pick_lr_scene(longform), 'longform')
+        self.assertEqual(_pick_lr_scene(general), 'general')
 
 
 if __name__ == '__main__':
