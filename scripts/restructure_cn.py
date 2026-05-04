@@ -314,7 +314,6 @@ def _build_templates():
         re.compile(r'这(?:说明|表明|意味着|反映)(?P<X>[^。！？\n]{5,40})'),
         [
             lambda m: f'也就是说，{m.group("X")}',
-            lambda m: f'此即{m.group("X")}',
         ]
     ))
 

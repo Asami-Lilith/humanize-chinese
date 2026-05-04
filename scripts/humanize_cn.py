@@ -244,7 +244,7 @@ WORD_SYNONYMS = {
     '产生': ['催生', '引出', '萌生', '冒出'],
     '增加': ['添加', '追加', '扩充', '加大'],
     '减少': ['缩减', '削减', '降低', '裁减'],
-    '保持': ['维持', '留住', '持续'],
+    '保持': ['维持', '持续'],
     # cycle 229: dropped '破解' — fits "破解难题/谜团" but reads aggressive on
     # generic "解决具体问题" ("什么破解具体的问题" landed in long_blog audit).
     '解决': ['化解', '处置', '攻克'],
@@ -359,7 +359,9 @@ WORD_SYNONYMS = {
     # '突出' is kept in '强调' alts where it functions as V (突出重要性).
     # cycle 202: dropped '大幅' — adverb-only, "显著进展" → "大幅进展"
     # awkward (大幅 only modifies verbs of change like 提升/下降, not nouns).
-    '显著': ['明显', '可观'],
+    # B-3 long_blog audit: "版本可观/明显，提升了..." shows this slot is
+    # too brittle after sentence restructuring.
+    # '显著': [],
     # cycle 214: dropped 症结 — too narrow (medical "crux/critical
     # bottleneck"), 破解症结 doesn't compose grammatically (症结 needs
     # 解决 / 找到, not 破解). 难题 / 麻烦 cover most contexts.
@@ -395,10 +397,10 @@ WORD_SYNONYMS = {
     # cycle 208: dropped '实力' — "沟通能力" → "沟通实力" wrong (cycle 205
     # blocked from cilin but WORD_SYNONYMS path was missed). 实力 = strength,
     # 能力 = capability — different concepts.
-    # cycle 214: dropped 功底 — too narrow (skill foundation in art/craft);
-    # "工作能力 → 工作功底" / "取舍能力 → 取舍功底" reads off. 才干 / 本事
-    # cover generic ability slots.
-    '能力': ['才干'],
+    # cycle 214: dropped 功底 — too narrow (skill foundation in art/craft).
+    # B-3 long_blog audit: 才干 also reads off in product prose
+    # ("沟通才干"). No safe broad synonym remains.
+    # '能力': [],
     '优势': ['长处', '强项', '亮点', '好处'],
     '资源': ['物资', '储备', '要素'],
     # '场景' alt removed: when source is '市场环境', substitution gives
@@ -496,7 +498,10 @@ def _filter_candidates_for_scene(word, candidates, scene):
     Additionally filters ACADEMIC_BLACKLIST_CANDIDATES when scene='academic',
     or NOVEL_BLACKLIST_CANDIDATES when scene='novel'.
     """
-    filtered = [c for c in candidates if c not in _AI_PATTERN_BLACKLIST]
+    filtered = [
+        c for c in candidates
+        if c not in _AI_PATTERN_BLACKLIST and c not in _CILIN_BLACKLIST
+    ]
     if scene == 'academic':
         filtered = [c for c in filtered if c not in ACADEMIC_BLACKLIST_CANDIDATES]
     elif scene == 'novel':
@@ -1058,6 +1063,35 @@ _CILIN_BLACKLIST = {
     # 报恩 (alt of 回报) means "repay kindness", not "return/feedback" —
     # "给我们最好的报恩" wrong concept.
     '报恩',
+    # B-3 long_blog mutation audit: CiLin alternates that read broken in
+    # modern product/blog prose ("在意于什么样攻克", "这一涉世",
+    # "这一年不休是").
+    '在意',
+    '涉世',
+    '不休',
+    # "利用数据" is fine, but "利用频率" is a common false slot when replacing
+    # 使用 inside product-metrics prose.
+    '利用',
+    # "顺着这个构思" is an off-slot replacement for 思路 in discourse markers.
+    '构思',
+    '小心',
+    '不住',
+    '笔触',
+    '应用',
+    '掌管',
+    '关键',
+    '可观',
+    '保管',
+    '才干',
+    '什么样',
+    '创制',
+    '此即',
+    '打算',
+    '只顾',
+    '调动',
+    '在心',
+    '何以',
+    '什么',
 }
 
 
@@ -1936,9 +1970,6 @@ def _apply_longform_mutation_profile(text, mutation_seed=None, scene='general',
     current = text
     current_score = lr_score(current)
     steps = (
-        lambda t: reduce_cross_para_3gram_repeat(
-            t, max_replacements=7, scene=scene, style=style,
-            seed=None if mutation_seed is None else mutation_seed + 11),
         lambda t: _longform_discourse_marker_diversity(
             t, seed=None if mutation_seed is None else mutation_seed + 23),
         lambda t: _longform_paragraph_punct_drift(
@@ -3443,6 +3474,7 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
     text = re.sub(r'\n{3,}', '\n\n', text)    # Normalize newlines
     text = re.sub(r'，。', '。', text)          # Remove comma before period
     text = re.sub(r'。，', '。', text)          # Remove period before comma
+    text = re.sub(r'(版本(?:显著|明显|可观))，(提升了)', r'\1\2', text)
     
     # ── Final verification loop (stats-optimized) ──
     # If perplexity is still too low, do a targeted second pass on worst sentences
