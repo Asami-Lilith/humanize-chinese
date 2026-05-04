@@ -2757,77 +2757,6 @@ def _estimate_source_aiscore(text):
         return None
 
 
-def _split_paragraph_at_sentence(para):
-    """Split one paragraph near its midpoint on a Chinese sentence boundary."""
-    parts = re.split(r'([。！？])', para)
-    sentences = []
-    for i in range(0, len(parts) - 1, 2):
-        sent = parts[i] + parts[i + 1]
-        if sent.strip():
-            sentences.append(sent)
-    if len(parts) % 2 == 1 and parts[-1].strip():
-        sentences.append(parts[-1])
-    if len(sentences) < 2:
-        return None
-
-    lens = [len(re.findall(r'[\u4e00-\u9fff]', s)) for s in sentences]
-    total = sum(lens)
-    if total == 0:
-        return None
-    running = 0
-    best_idx = 1
-    best_delta = total
-    for i, length in enumerate(lens[:-1], 1):
-        running += length
-        delta = abs(total / 2 - running)
-        if delta < best_delta:
-            best_delta = delta
-            best_idx = i
-    left = ''.join(sentences[:best_idx]).strip()
-    right = ''.join(sentences[best_idx:]).strip()
-    if not left or not right:
-        return None
-    return left, right
-
-
-def _restore_paragraph_count(text, target_count):
-    """Keep rewrite output aligned with the source paragraph count."""
-    if target_count <= 1:
-        return text
-
-    paragraphs = split_paragraphs(text)
-    if len(paragraphs) == target_count:
-        return text
-
-    while len(paragraphs) > target_count:
-        pairs = []
-        for i in range(len(paragraphs) - 1):
-            combined_len = len(paragraphs[i].strip()) + len(paragraphs[i + 1].strip())
-            pairs.append((combined_len, i))
-        _, idx = min(pairs)
-        merged = paragraphs[idx].rstrip() + '\n' + paragraphs[idx + 1].lstrip()
-        paragraphs = paragraphs[:idx] + [merged] + paragraphs[idx + 2:]
-
-    while len(paragraphs) < target_count:
-        candidates = sorted(
-            ((len(re.findall(r'[\u4e00-\u9fff]', p)), i) for i, p in enumerate(paragraphs)),
-            reverse=True,
-        )
-        changed = False
-        for _, idx in candidates:
-            split = _split_paragraph_at_sentence(paragraphs[idx])
-            if split is None:
-                continue
-            left, right = split
-            paragraphs = paragraphs[:idx] + [left, right] + paragraphs[idx + 1:]
-            changed = True
-            break
-        if not changed:
-            break
-
-    return join_paragraphs(paragraphs)
-
-
 DEFAULT_BEST_OF_N = 10
 
 
@@ -2868,8 +2797,6 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
 
     if seed is not None:
         random.seed(seed)
-
-    source_paragraph_count = len(split_paragraphs(text))
 
     config = SCENES.get(scene, SCENES['general'])
     casualness = config.get('casualness', 0.3)
@@ -3070,7 +2997,6 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
                 
                 text = ''.join(sentences)
 
-    text = _restore_paragraph_count(text, source_paragraph_count)
     
     return text.strip()
 
