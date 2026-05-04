@@ -244,7 +244,7 @@ WORD_SYNONYMS = {
     '产生': ['催生', '引出', '萌生', '冒出'],
     '增加': ['添加', '追加', '扩充', '加大'],
     '减少': ['缩减', '削减', '降低', '裁减'],
-    '保持': ['维持', '守住', '留住', '持续'],
+    '保持': ['维持', '留住', '持续'],
     # cycle 229: dropped '破解' — fits "破解难题/谜团" but reads aggressive on
     # generic "解决具体问题" ("什么破解具体的问题" landed in long_blog audit).
     '解决': ['化解', '处置', '攻克'],
@@ -1048,6 +1048,16 @@ _CILIN_BLACKLIST = {
     # is also added to _CILIN_SOURCE_BLACKLIST below.
     '亦可',  # 能够 / 可知 alt — 文言, register slip in modern prose
     '可知',  # 能够 / 亦可 alt — 文言 ("可知道")
+    # b4 hero candidate audit — substitutions appearing in dramatic-drop AI samples:
+    # 可巧 (alt of 适时/及时/刚巧) means "happens to coincide", not "in a timely
+    # manner" — "可巧调整" 不通.
+    '可巧',
+    # 接轨 (alt of 继续/延续/接续) means "integrate/connect with"; "接轨坚持"
+    # / "接轨定投" misreads as integration.
+    '接轨',
+    # 报恩 (alt of 回报) means "repay kindness", not "return/feedback" —
+    # "给我们最好的报恩" wrong concept.
+    '报恩',
 }
 
 
@@ -1705,6 +1715,253 @@ def reduce_cross_para_3gram_repeat(text, max_replacements=4, scene='general',
             replaced += 1
 
     return join_paragraphs(new_paragraphs)
+
+
+_LONGFORM_PARA_HEAD_MARKERS = (
+    '首先', '其次', '再次', '最后', '然后', '接下来', '与此同时',
+    '此外', '另外', '除此之外', '具体而言', '具体来说', '具体地说',
+    '一方面', '另一方面', '总的来说', '总而言之', '综上所述',
+    '因此', '所以', '由此', '进而', '从而', '基于此',
+    '然而', '不过', '事实上', '实际上',
+)
+
+_LONGFORM_STARTER_MARKERS = (
+    '同时', '此外', '另外', '因此', '所以', '然而', '不过',
+    '事实上', '实际上', '具体来说', '具体而言', '总的来说',
+    '换言之', '简而言之', '需要注意的是', '值得注意的是',
+)
+
+
+def _strip_leading_marker_once(fragment, markers):
+    s = fragment.lstrip()
+    prefix = fragment[:len(fragment) - len(s)]
+    for marker in sorted(markers, key=len, reverse=True):
+        if s.startswith(marker):
+            rest = s[len(marker):]
+            if rest.startswith(('，', ',', '、', '：', ':')):
+                rest = rest[1:]
+            if len(re.findall(r'[一-鿿]', rest)) >= 12:
+                return prefix + rest.lstrip()
+    return fragment
+
+
+def _longform_discourse_marker_diversity(text, seed=None):
+    """Remove repeated paragraph-head discourse markers on long candidates."""
+    if seed is not None:
+        random.seed(seed)
+    paragraphs = split_paragraphs(text)
+    if len(paragraphs) < 4:
+        return text
+
+    seen = set()
+    changed = 0
+    result = []
+    for p in paragraphs:
+        stripped = p.lstrip()
+        marker = None
+        for m in sorted(_LONGFORM_PARA_HEAD_MARKERS, key=len, reverse=True):
+            if stripped.startswith(m):
+                marker = m
+                break
+        if marker and marker in seen and changed < 3 and random.random() < 0.8:
+            new_p = _strip_leading_marker_once(p, (marker,))
+            if new_p != p and new_p.strip():
+                p = new_p
+                changed += 1
+        if marker:
+            seen.add(marker)
+        result.append(p)
+
+    return join_paragraphs(result)
+
+
+def _longform_merge_one_sentence_pair(para):
+    parts = re.split(r'([。！？])', para)
+    pairs = []
+    for i in range(0, len(parts) - 1, 2):
+        if parts[i].strip():
+            pairs.append([parts[i], parts[i + 1]])
+    if len(parts) % 2 == 1 and parts[-1].strip():
+        pairs.append([parts[-1], ''])
+    if len(pairs) < 3:
+        return para
+
+    for i in range(len(pairs) - 1):
+        s1, _ = pairs[i]
+        s2, p2 = pairs[i + 1]
+        l1 = len(re.findall(r'[一-鿿]', s1))
+        l2 = len(re.findall(r'[一-鿿]', s2))
+        if not (8 <= l1 <= 28 and 8 <= l2 <= 32 and l1 + l2 <= 62):
+            continue
+        if s2.lstrip().startswith(_PARA_BOOST_BARE_CONTINUATOR):
+            continue
+        pairs[i] = [s1.rstrip() + '，' + s2.lstrip(), p2]
+        pairs.pop(i + 1)
+        return ''.join(s + p for s, p in pairs)
+    return para
+
+
+def _longform_split_one_comma_clause(para):
+    parts = re.split(r'([。！？])', para)
+    pairs = []
+    for i in range(0, len(parts) - 1, 2):
+        if parts[i].strip():
+            pairs.append([parts[i], parts[i + 1]])
+    if len(parts) % 2 == 1 and parts[-1].strip():
+        pairs.append([parts[-1], ''])
+    if len(pairs) < 2:
+        return para
+
+    for i, (sent, punct) in enumerate(pairs):
+        if len(re.findall(r'[一-鿿]', sent)) < 34:
+            continue
+        for m in re.finditer(r'[，,]', sent):
+            left = sent[:m.start()]
+            right = sent[m.end():]
+            if (len(re.findall(r'[一-鿿]', left)) >= 12 and
+                    len(re.findall(r'[一-鿿]', right)) >= 14 and
+                    not right.lstrip().startswith(_PARA_BOOST_BARE_CONTINUATOR)):
+                pairs[i] = [left.rstrip() + '。' + right.lstrip(), punct]
+                return ''.join(s + p for s, p in pairs)
+    return para
+
+
+def _longform_paragraph_punct_drift(text, seed=None):
+    """Create mild paragraph-to-paragraph punctuation rhythm drift."""
+    if seed is not None:
+        random.seed(seed)
+    paragraphs = split_paragraphs(text)
+    if len(paragraphs) < 4:
+        return text
+
+    result = []
+    changed = 0
+    start = random.randrange(2)
+    for idx, p in enumerate(paragraphs):
+        new_p = p
+        if changed < 3 and len(re.findall(r'[一-鿿]', p)) >= 70:
+            if (idx + start) % 2 == 0:
+                new_p = _longform_split_one_comma_clause(p)
+            else:
+                new_p = _longform_merge_one_sentence_pair(p)
+            if new_p != p and new_p.strip():
+                changed += 1
+        result.append(new_p)
+    return join_paragraphs(result)
+
+
+def _longform_paragraph_length_cv_micro_adjust(text, seed=None):
+    """Single guarded merge/split pass when paragraph lengths are too uniform."""
+    if seed is not None:
+        random.seed(seed)
+    paragraphs = split_paragraphs(text)
+    if len(paragraphs) < 5:
+        return text
+    cv = _para_cv(paragraphs)
+    if cv is not None and cv >= 0.48:
+        return text
+    adjusted = vary_paragraph_rhythm(text)
+    if len(split_paragraphs(adjusted)) < len(paragraphs) - 1:
+        return text
+    return adjusted
+
+
+def _longform_starter_entropy_boost(text, seed=None):
+    """Reduce repeated safe transition starters without inventing new wording."""
+    if seed is not None:
+        random.seed(seed)
+    paragraphs = split_paragraphs(text)
+    if len(paragraphs) < 3:
+        return text
+
+    starter_counts = {}
+    for sent in re.split(r'[。！？!?；;\n]+', text):
+        chars = re.findall(r'[一-鿿]', sent)
+        if len(chars) >= 2:
+            key = ''.join(chars[:2])
+            starter_counts[key] = starter_counts.get(key, 0) + 1
+    repeated = {k for k, v in starter_counts.items() if v >= 2}
+    if not repeated:
+        return text
+
+    changed = 0
+
+    def strip_sentence(m):
+        nonlocal changed
+        boundary, body = m.group(1), m.group(2)
+        chars = re.findall(r'[一-鿿]', body)
+        key = ''.join(chars[:2]) if len(chars) >= 2 else ''
+        if key not in repeated or changed >= 3 or random.random() >= 0.7:
+            return m.group(0)
+        new_body = _strip_leading_marker_once(body, _LONGFORM_STARTER_MARKERS)
+        if new_body != body and new_body.strip():
+            changed += 1
+            return boundary + new_body
+        return m.group(0)
+
+    result = []
+    pattern = re.compile(r'(^|[。！？!?；;\n])([^。！？!?；;\n]+)')
+    for p in paragraphs:
+        result.append(pattern.sub(strip_sentence, p))
+    return join_paragraphs(result)
+
+
+def _apply_longform_mutation_profile(text, mutation_seed=None, scene='general',
+                                     style=None):
+    """Candidate-only longform mutations for best-of-n exploration."""
+    before_paras = len(split_paragraphs(text))
+    if before_paras < 3:
+        return text
+
+    try:
+        from ngram_model import compute_lr_score
+    except ImportError:
+        try:
+            from scripts.ngram_model import compute_lr_score
+        except ImportError:
+            compute_lr_score = None
+
+    def lr_score(candidate):
+        if compute_lr_score is None:
+            return None
+        lr = compute_lr_score(candidate, scene='longform')
+        return lr['score'] if lr else None
+
+    def structurally_safe(candidate):
+        after_paras = split_paragraphs(candidate)
+        if any(not p.strip() for p in after_paras):
+            return False
+        return len(after_paras) >= before_paras - 2
+
+    current = text
+    current_score = lr_score(current)
+    steps = (
+        lambda t: reduce_cross_para_3gram_repeat(
+            t, max_replacements=7, scene=scene, style=style,
+            seed=None if mutation_seed is None else mutation_seed + 11),
+        lambda t: _longform_discourse_marker_diversity(
+            t, seed=None if mutation_seed is None else mutation_seed + 23),
+        lambda t: _longform_paragraph_punct_drift(
+            t, seed=None if mutation_seed is None else mutation_seed + 37),
+        lambda t: _longform_paragraph_length_cv_micro_adjust(
+            t, seed=None if mutation_seed is None else mutation_seed + 41),
+        lambda t: _longform_starter_entropy_boost(
+            t, seed=None if mutation_seed is None else mutation_seed + 53),
+    )
+
+    for step in steps:
+        candidate = step(current)
+        if candidate == current or not structurally_safe(candidate):
+            continue
+        candidate_score = lr_score(candidate)
+        if (current_score is not None and candidate_score is not None and
+                candidate_score > current_score):
+            continue
+        current = candidate
+        if candidate_score is not None:
+            current_score = candidate_score
+
+    return current if structurally_safe(current) else text
 
 
 _PARA_INTERJECTION_NEUTRAL = (
@@ -2994,6 +3251,10 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
             out = humanize(text, scene=scene, aggressive=aggressive,
                            seed=s, best_of_n=None, style=style)
             lr_scene = _pick_lr_scene(out)
+            if lr_scene == 'longform':
+                out = _apply_longform_mutation_profile(
+                    out, mutation_seed=s, scene=scene, style=style)
+                lr_scene = _pick_lr_scene(out)
             lr = compute_lr_score(out, scene=lr_scene)
             score = lr['score'] if lr else 50
             rule_score = 0
