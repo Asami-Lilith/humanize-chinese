@@ -1012,6 +1012,16 @@ _CILIN_BLACKLIST = {
     '是的',  # 不易/正确 alt — particle "yes"; wrong slot
     '倒转',  # 反而 alt — "reverse direction"; off-meaning
     '反是',  # 反而 alt — archaic
+    # long_blog audit (post-d3dc2ea):
+    # 检点 (alt of 上心/专注/只顾/在意/查点 etc) means "examine/scrutinize",
+    # not "focus on" — "我常常只顾于" → "我常常检点于" misreads.
+    '检点',
+    # 使得 (alt of 驱动/有效/管用/可行/...) means "cause/make happen", not
+    # "drive" — "数据驱动的决策" → "数据使得的决策" 不通.
+    '使得',
+    # 何等 (alt of 如何/什么/怎样/...) is exclamatory ("how/what a"), wrong
+    # POS for interrogative slot — "如何攻克" → "何等攻克" 不通.
+    '何等',
     # social/general 病句 audit (post-codex review):
     # 个人 cilin alts include 斯人 (literary "this person" — modern 不通);
     # 我们 cilin alts include 咱俩 (dual "the two of us" — wrong number),
@@ -1100,6 +1110,11 @@ _CILIN_SOURCE_BLACKLIST = {
     # cycle 247: 进而 alts (一发/尤为/尤其/愈加/愈发/愈来愈) all degree adverbs;
     # 进而 is sequential connector ("furthermore/then"), different concept.
     '进而',
+    # long_blog audit: substring collision. cilin '品蓝' → '藏蓝' fires inside
+    # "产品蓝图" → "产藏蓝图" because regex matches '品蓝' substring across
+    # word boundary (产品|蓝图). Block source — color noun never wanted in
+    # AIGC humanize anyway.
+    '品蓝',
 }
 
 
