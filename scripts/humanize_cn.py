@@ -1111,6 +1111,11 @@ _CILIN_BLACKLIST = {
     # 主从 (also alt of 核心) — relational "principal vs subordinate";
     # not a noun substitute for 核心 essence slot.
     '主从',
+    # cycle 251: 一时 (alt of 时代/时期/时日/一代/一世) means "momentarily/for
+    # a moment" — semantically opposite to era/period/lifetime. "技术快速
+    # 推进、全球化深入推进的一时" (lf:80 audit, source had 时代) is broken;
+    # should stay "时代". Multi-source mistake in cilin grouping.
+    '一时',
 }
 
 
