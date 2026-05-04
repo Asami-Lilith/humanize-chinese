@@ -982,6 +982,10 @@ _CILIN_BLACKLIST = {
     '心数',  # 手段 alt — wrong slot ("mind/wits")
     '心眼',  # 手段 alt — wrong slot ("mind/heart")
     '手眼',  # 手段 alt — idiom-only ("手眼通天")
+    # cycle 247 不-family + 反而 family scan:
+    '是的',  # 不易/正确 alt — particle "yes"; wrong slot
+    '倒转',  # 反而 alt — "reverse direction"; off-meaning
+    '反是',  # 反而 alt — archaic
 }
 
 
@@ -1040,6 +1044,17 @@ _CILIN_SOURCE_BLACKLIST = {
     # physical greenhouse types; "温室气体" is fixed scientific term, ANY
     # substitution breaks it ("花房气体" → "flower-house gas" 错). Block source.
     '温室',
+    # cycle 247: 不易 cilin alts (不利/不错/对头/得法/无误/是的) — 不利 is
+    # OPPOSITE meaning, others wrong slot. Most already individually
+    # blacklisted; source block to be exhaustive.
+    '不易',
+    # cycle 247: 不堪 alts (受不了/吃不住/吃不消/哪堪/架不住/禁不住) all
+    # colloquial; 不堪 fixed term ("不堪重负/不堪入目/不堪一击") — substitution
+    # breaks 4-char idioms.
+    '不堪',
+    # cycle 247: 进而 alts (一发/尤为/尤其/愈加/愈发/愈来愈) all degree adverbs;
+    # 进而 is sequential connector ("furthermore/then"), different concept.
+    '进而',
 }
 
 
