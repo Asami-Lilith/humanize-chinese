@@ -397,7 +397,7 @@ WORD_SYNONYMS = {
     # cycle 214: dropped 功底 — too narrow (skill foundation in art/craft);
     # "工作能力 → 工作功底" / "取舍能力 → 取舍功底" reads off. 才干 / 本事
     # cover generic ability slots.
-    '能力': ['本事', '才干'],
+    '能力': ['才干'],
     '优势': ['长处', '强项', '亮点', '好处'],
     '资源': ['物资', '储备', '要素'],
     # '场景' alt removed: when source is '市场环境', substitution gives
@@ -1041,6 +1041,12 @@ _CILIN_BLACKLIST = {
     # 毫无疑问 cilin alts include 大势所趋 ("inevitable trend") — totally
     # different meaning. 毫无疑问 = "no doubt"; 大势所趋 = "general/inevitable".
     '大势所趋',  # 毫无疑问 alt — meaning mismatch
+    # general audit (post-d3dc2ea + e94e7b7):
+    # 能够 cilin alts (亦可/可知) are both 文言. "能够 X" → "亦可 X" / "可知 X"
+    # leaks 文言 register into general/academic prose. Block both alts; source
+    # is also added to _CILIN_SOURCE_BLACKLIST below.
+    '亦可',  # 能够 / 可知 alt — 文言, register slip in modern prose
+    '可知',  # 能够 / 亦可 alt — 文言 ("可知道")
 }
 
 
@@ -1115,6 +1121,9 @@ _CILIN_SOURCE_BLACKLIST = {
     # word boundary (产品|蓝图). Block source — color noun never wanted in
     # AIGC humanize anyway.
     '品蓝',
+    # general audit: 能够 cilin alts (亦可/可知) are both 文言. Source blacklist
+    # since neither alt ever fits modern modal "能够 X" slot.
+    '能够',
 }
 
 
