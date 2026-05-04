@@ -991,6 +991,25 @@ _CILIN_BLACKLIST = {
     '是的',  # 不易/正确 alt — particle "yes"; wrong slot
     '倒转',  # 反而 alt — "reverse direction"; off-meaning
     '反是',  # 反而 alt — archaic
+    # social/general 病句 audit (post-codex review):
+    # 个人 cilin alts include 斯人 (literary "this person" — modern 不通);
+    # 我们 cilin alts include 咱俩 (dual "the two of us" — wrong number),
+    # 吾侪/吾辈/我辈 (all 文言 plurals), 俺们 (regional). Block them.
+    '斯人',  # 个人 alt — 文言 "斯人" never modern Chinese
+    '咱俩',  # 我们 alt — dual ("the two of us"), wrong for plural 我们
+    '吾侪',  # 我们 alt — 文言
+    '吾辈',  # 我们 alt — 文言
+    '我辈',  # 我们 alt — 文言
+    '俺们',  # 我们 alt — 北方方言, register mismatch in standard prose
+    # 科学 cilin alts include 无误 ("error-free") — different concept;
+    # 不易 family already source-blocked but 无误 leaks via 科学 path.
+    '无误',  # 科学 alt — "error-free", different from "scientific/systematic"
+    # 真正 cilin alts include 实际 ("actually" adv) — POS clash with attributive
+    # use ("真正重要" → "实际重要" 不通). Other alts (一是一/委实/实在/实打实) keep.
+    '实际',  # 真正 alt — POS clash in attributive contexts ("真正重要")
+    # 毫无疑问 cilin alts include 大势所趋 ("inevitable trend") — totally
+    # different meaning. 毫无疑问 = "no doubt"; 大势所趋 = "general/inevitable".
+    '大势所趋',  # 毫无疑问 alt — meaning mismatch
 }
 
 
