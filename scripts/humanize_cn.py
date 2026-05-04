@@ -11,6 +11,7 @@ import random
 import json
 import os
 import argparse
+import math
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -2822,6 +2823,109 @@ def _estimate_source_aiscore(text):
 
 
 DEFAULT_BEST_OF_N = 10
+DEFAULT_SECONDARY_WEIGHT = 0.2
+
+
+def _clamp_0_100(value):
+    return max(0.0, min(100.0, float(value)))
+
+
+def _norm_linear(value, low, high, invert=False):
+    if value is None or high == low:
+        return 0.0
+    raw = (float(value) - low) / (high - low)
+    if invert:
+        raw = 1.0 - raw
+    return _clamp_0_100(raw * 100.0)
+
+
+def _starter_entropy(text, width=2):
+    sentences = [s.strip() for s in re.split(r'[。！？!?；;\n]+', text) if s.strip()]
+    starters = {}
+    total = 0
+    for sent in sentences:
+        chars = re.findall(r'[\u4e00-\u9fff]', sent)
+        if len(chars) < width:
+            continue
+        key = ''.join(chars[:width])
+        starters[key] = starters.get(key, 0) + 1
+        total += 1
+    if total < 5:
+        return 0.0
+    entropy = 0.0
+    for count in starters.values():
+        p = count / total
+        entropy -= p * math.log2(p)
+    return entropy
+
+
+def _secondary_signal_details(text):
+    """Return auxiliary best-of-n AI-likeness score and raw/capped features.
+
+    These are deliberately not LR calibration inputs. They reuse already
+    implemented but capped/disabled signals to sway candidate ranking only.
+    """
+    if not text or ngram_analyze is None:
+        return {
+            'score': 0.0,
+            'bino': 0.0,
+            'curv': 0.0,
+            'mattr': 0.0,
+            'starter_h': 0.0,
+            'bino_s': 0.0,
+            'curv_s': 0.0,
+            'mattr_s': 0.0,
+            'starter_s': 0.0,
+        }
+    try:
+        analysis = ngram_analyze(text)
+    except Exception:
+        return {
+            'score': 0.0,
+            'bino': 0.0,
+            'curv': 0.0,
+            'mattr': 0.0,
+            'starter_h': 0.0,
+            'bino_s': 0.0,
+            'curv_s': 0.0,
+            'mattr_s': 0.0,
+            'starter_s': 0.0,
+        }
+
+    bino = (analysis.get('bino') or {}).get('mean_lp_diff') or 0.0
+    curv = (analysis.get('curv') or {}).get('curvature_mean') or 0.0
+    mattr = analysis.get('char_mattr') or 0.0
+    starter_h = _starter_entropy(text, width=2)
+
+    # Direction: higher score means more AI-like. Binoculars diff is less
+    # negative on HC3 ChatGPT; curvature is higher; MATTR and starter entropy
+    # are lower when wording/openers are more repetitive.
+    bino_s = _norm_linear(bino, -4.6, -2.2)
+    curv_s = _norm_linear(curv, 0.0, 1.2)
+    mattr_s = _norm_linear(mattr, 0.50, 0.72, invert=True)
+    starter_s = _norm_linear(starter_h, 1.2, 2.4, invert=True)
+
+    score = (
+        0.35 * bino_s +
+        0.25 * curv_s +
+        0.25 * mattr_s +
+        0.15 * starter_s
+    )
+    return {
+        'score': round(_clamp_0_100(score), 2),
+        'bino': round(float(bino), 4),
+        'curv': round(float(curv), 4),
+        'mattr': round(float(mattr), 4),
+        'starter_h': round(float(starter_h), 4),
+        'bino_s': round(bino_s, 2),
+        'curv_s': round(curv_s, 2),
+        'mattr_s': round(mattr_s, 2),
+        'starter_s': round(starter_s, 2),
+    }
+
+
+def _compute_secondary_signal(text):
+    return _secondary_signal_details(text)['score']
 
 
 def _pick_lr_scene(text):
@@ -2834,19 +2938,24 @@ def _pick_lr_scene(text):
     return 'general'
 
 
-def _format_best_of_debug(seed, scene_picked, lr_scores, fused_score, top_contribs):
+def _format_best_of_debug(seed, scene_picked, lr_scores, secondary, rank_score,
+                          fused_score, top_contribs):
     top = ', '.join(f'{name}={value:+.2f}' for name, value in top_contribs[:3])
     return (
         f'best_of_n seed={seed} scene_picked={scene_picked} '
         f'LR_general={lr_scores.get("general", "NA")} '
         f'LR_academic={lr_scores.get("academic", "NA")} '
         f'LR_longform={lr_scores.get("longform", "NA")} '
-        f'fused={fused_score} top_3_contributions=[{top}]'
+        f'secondary={secondary["score"]} '
+        f'[bino={secondary["bino"]} curv={secondary["curv"]} '
+        f'mattr={secondary["mattr"]} starter_h={secondary["starter_h"]}] '
+        f'rank={rank_score:.2f} fused={fused_score} top_3_contributions=[{top}]'
     )
 
 
 def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAULT_BEST_OF_N,
-             style=None, debug_best_of_n=False, score_mode='lr'):
+             style=None, debug_best_of_n=False, score_mode='lr',
+             secondary_weight=DEFAULT_SECONDARY_WEIGHT):
     """Apply all humanization transformations in order.
 
     Graduated intensity based on source AI-score (pre-detect):
@@ -2893,14 +3002,15 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
                 issues, metrics = detect_patterns(out)
                 rule_score = calculate_score(issues, metrics)
             fused = round(0.8 * score + 0.2 * rule_score)
+            secondary = _secondary_signal_details(out)
             if score_mode == 'fused':
-                rank_score = fused
+                rank_score = fused + secondary_weight * secondary['score']
                 rank_tiebreak = score
             elif score_mode == 'lr+rule':
-                rank_score = score
+                rank_score = score + secondary_weight * secondary['score']
                 rank_tiebreak = rule_score
             else:
-                rank_score = score
+                rank_score = score + secondary_weight * secondary['score']
                 rank_tiebreak = 0
             if debug_best_of_n:
                 lr_scores = {}
@@ -2908,7 +3018,8 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
                     debug_lr = compute_lr_score(out, scene=debug_scene)
                     lr_scores[debug_scene] = debug_lr['score'] if debug_lr else 'NA'
                 top_contribs = lr.get('top_contributions', []) if lr else []
-                print(_format_best_of_debug(s, lr_scene, lr_scores, fused, top_contribs),
+                print(_format_best_of_debug(s, lr_scene, lr_scores, secondary,
+                                            rank_score, fused, top_contribs),
                       file=sys.stderr)
             candidates.append((rank_score, rank_tiebreak, s, out))
         candidates.sort(key=lambda x: (x[0], x[1], x[2]))
@@ -3137,6 +3248,8 @@ def main():
                        help='打印 best-of-n 每个候选的 LR scene、分数和主要贡献（stderr）')
     parser.add_argument('--score-mode', default='lr', choices=['lr', 'fused', 'lr+rule'],
                        help='best-of-n 排序方式：lr=scene-aware LR；fused=0.8*LR+0.2*rule；lr+rule=LR 优先、rule 打破平局')
+    parser.add_argument('--secondary-weight', type=float, default=DEFAULT_SECONDARY_WEIGHT,
+                       help=f'best-of-n secondary signal 权重（默认 {DEFAULT_SECONDARY_WEIGHT}，0 关闭）')
     parser.add_argument('--no-stats', action='store_true',
                        help='跳过统计优化（困惑度反馈），回退到纯规则替换')
     parser.add_argument('--no-noise', action='store_true',
@@ -3179,7 +3292,8 @@ def main():
     result = humanize(text, args.scene, args.aggressive, args.seed,
                        best_of_n=args.best_of_n, style=args.style,
                        debug_best_of_n=args.debug_best_of_n,
-                       score_mode=args.score_mode)
+                       score_mode=args.score_mode,
+                       secondary_weight=args.secondary_weight)
     
     # Apply style if specified
     if args.style:

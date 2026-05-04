@@ -12,7 +12,7 @@ if str(SCRIPTS) not in sys.path:
 os.environ.setdefault('PYTHONHASHSEED', '0')
 
 from _text_utils import split_paragraphs  # noqa: E402
-from humanize_cn import _pick_lr_scene, humanize  # noqa: E402
+from humanize_cn import _compute_secondary_signal, _pick_lr_scene, humanize  # noqa: E402
 from detect_cn import calculate_score, detect_patterns  # noqa: E402
 from ngram_model import compute_lr_score  # noqa: E402
 
@@ -86,6 +86,28 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(_pick_lr_scene(academic), 'academic')
         self.assertEqual(_pick_lr_scene(longform), 'longform')
         self.assertEqual(_pick_lr_scene(general), 'general')
+
+    def test_secondary_signal(self):
+        empty_score = _compute_secondary_signal('')
+        self.assertGreaterEqual(empty_score, 0)
+        self.assertLessEqual(empty_score, 100)
+
+        hc3_path = ROOT.parents[1] / 'data' / 'hc3_chinese_all.jsonl'
+        if not hc3_path.exists():
+            self.skipTest('HC3-Chinese dataset not available')
+
+        evals_dir = ROOT / 'evals'
+        if str(evals_dir) not in sys.path:
+            sys.path.insert(0, str(evals_dir))
+        from run_hc3_benchmark import load_hc3  # noqa: E402
+
+        samples = load_hc3(str(hc3_path), n=12, seed=42)
+        human_scores = [_compute_secondary_signal(s['human_answer']) for s in samples]
+        ai_scores = [_compute_secondary_signal(s['chatgpt_answer']) for s in samples]
+        human_avg = sum(human_scores) / len(human_scores)
+        ai_avg = sum(ai_scores) / len(ai_scores)
+        self.assertNotEqual(round(human_avg, 2), round(ai_avg, 2))
+        self.assertGreater(ai_avg, human_avg)
 
 
 if __name__ == '__main__':
