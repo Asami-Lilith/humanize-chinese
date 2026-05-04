@@ -5,7 +5,7 @@ Usage:
   humanize detect   <file> [options]    AI detection score (0-100)
   humanize rewrite  <file> [options]    Humanize (去 AI 味改写)
   humanize academic <file> [options]    Academic paper AIGC 降重
-  humanize style    <file> --style S    7 种写作风格转换
+  humanize style    <file> --style S    8 种写作风格转换
   humanize compare  <file> [options]    改写前后对比
 
   humanize --list                       List available subcommands
@@ -29,7 +29,7 @@ SUBCOMMANDS = {
     'detect':   ('detect_cn.py',   'AI 痕迹检测 (0-100)'),
     'rewrite':  ('humanize_cn.py', '通用去 AI 味改写'),
     'academic': ('academic_cn.py', '学术论文 AIGC 降重（11 维度）'),
-    'style':    ('style_cn.py',    '7 种风格转换（小红书/知乎/微博等）'),
+    'style':    ('style_cn.py',    '8 种风格转换（含小说/小红书/知乎/微博等）'),
     'compare':  ('compare_cn.py',  '改写前后对比'),
 }
 

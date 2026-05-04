@@ -360,7 +360,7 @@ python scripts/academic_cn.py 论文.txt -o 改后.txt -a --compare
 
 ```bash
 ./humanize detect   [file] [-v] [-s] [-j]
-./humanize rewrite  [file] [-o out] [--scene S] [--style S] [-a] [--seed N] [--quick] [--cilin]
+./humanize rewrite  [file] [-o out] [--scene S] [--style S] [-a] [--seed N] [--quick] [--cilin] [--best-of-n N] [--score-mode lr|fused|lr+rule]
 ./humanize academic [file] [-o out] [--detect-only] [-a] [--compare] [--quick]
 ./humanize style    [file] --style S [-o out] [--no-humanize]
 ./humanize compare  [file] [-o out] [--scene S] [-a]
@@ -388,6 +388,10 @@ python scripts/compare_cn.py [file] ...
 | `--no-stats` | 关闭统计优化 |
 | `--no-noise` | 关闭噪声注入和句长随机化 |
 | `--cilin` | 开启 CiLin 同义词扩展（humanize） |
+| `--best-of-n N` | 跑 N 个候选取 LR 最低（默认 20，0 关闭，N 倍延迟） |
+| `--debug-best-of-n` | 打印每候选的 scene LR / 主要贡献到 stderr |
+| `--score-mode` | best-of-n 排序：`lr`（默认 scene-aware）/ `fused` / `lr+rule` |
+| `--secondary-weight` | secondary signal 权重（默认 0.2，0 关闭） |
 | `--compare` | 改写前后双评分对比（academic） |
 | `--no-humanize` | style 转换前不先去 AI 词 |
 
@@ -484,8 +488,8 @@ for f in *.md; do ./humanize rewrite "$f" -a -o "${f%.md}_clean.md"; done
 python evals/run_hc3_benchmark.py --n 200 --seed 42
 
 # 长文本 170 样本 benchmark (含 AI long-form + 人类对照)
-# best-of-n 10 = 默认用户体验；省略此 flag 跑得快但 -10 分降幅
-python evals/run_longform_benchmark.py --n-human 60 --seed 42 --best-of-n 10
+# best-of-n 20 = production 默认（rewrite CLI 默认值）；省略此 flag 跑得快但 -10 分降幅
+python evals/run_longform_benchmark.py --n-human 60 --seed 42 --best-of-n 20
 ```
 
 ---
