@@ -1093,6 +1093,10 @@ _CILIN_BLACKLIST = {
     '何以',
     '什么',
     '当真',
+    # heartbeat audit: 尤其 (alt of 更加) needs comparison context. "尤其充实"
+    # / "迎来尤其充实和有意义的人生" (social hero) reads off; should be
+    # intensifier "更加充实".
+    '尤其',
 }
 
 
