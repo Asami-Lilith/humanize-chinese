@@ -329,7 +329,9 @@ WORD_SYNONYMS = {
     '大量': ['海量', '大批', '众多', '成堆的'],
     # cycle 203: dropped '更', '再' — "更进一步" → "更更" / "更再" broken;
     # "再X" reads as repetition (wrong meaning, 进一步 implies progression).
-    '进一步': ['深入', '继续'],
+    # cycle 252: dropped '深入' — when source has "进一步深入" adjacency, sub
+    # gives "深入深入" (lf:42 academic audit). 继续 is safe single alt.
+    '进一步': ['继续'],
     '充分': ['尽情', '透彻', '淋漓', '饱满'],
     '直接': ['径直', '当面', '立刻', '干脆'],
     # cycle 164: '特别' alts trimmed to '尤其' only — '格外'/'极'/'分外'
@@ -3090,7 +3092,9 @@ def diversify_vocabulary(text):
         '实现': ['达到', '做到', '完成'],
         '提供': ['给出', '带来'],  # Cycle 63: dropped 拿出 (see WORD_SYNONYMS comment)
         '具有': ['有', '拥有', '带有'],
-        '进一步': ['深入'],  # cycle 203: drop 更/再 (broken in 更进一步)
+        # cycle 252: dropped '深入' — adjacency cascade "进一步深入" → "深入深入"
+        # leaves no alt; effectively skip 进一步 in diversify_vocabulary path.
+        # '进一步': drop entry (was ['深入'])
         '不断': ['持续', '一直', '始终'],
         # '有效' skipped: attributive/adj usage (有效证件) breaks with verb substitutes
         '积极': ['主动', '热心'],
