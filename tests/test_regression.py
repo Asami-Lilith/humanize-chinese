@@ -12,7 +12,12 @@ if str(SCRIPTS) not in sys.path:
 os.environ.setdefault('PYTHONHASHSEED', '0')
 
 from _text_utils import split_paragraphs  # noqa: E402
-from humanize_cn import _compute_secondary_signal, _pick_lr_scene, humanize  # noqa: E402
+from humanize_cn import (  # noqa: E402
+    _apply_longform_mutation_profile,
+    _compute_secondary_signal,
+    _pick_lr_scene,
+    humanize,
+)
 from detect_cn import calculate_score, detect_patterns  # noqa: E402
 from ngram_model import compute_lr_score  # noqa: E402
 
@@ -86,6 +91,17 @@ class RegressionTests(unittest.TestCase):
         self.assertEqual(_pick_lr_scene(academic), 'academic')
         self.assertEqual(_pick_lr_scene(longform), 'longform')
         self.assertEqual(_pick_lr_scene(general), 'general')
+
+    def test_longform_mutations_safe(self):
+        text = (ROOT / 'examples' / 'sample_long_blog.txt').read_text(encoding='utf-8')
+        candidate = humanize(text, seed=44, best_of_n=None)
+        mutated = _apply_longform_mutation_profile(candidate, mutation_seed=44)
+
+        before = len(split_paragraphs(candidate))
+        after_paragraphs = split_paragraphs(mutated)
+
+        self.assertTrue(all(p.strip() for p in after_paragraphs))
+        self.assertGreaterEqual(len(after_paragraphs), before - 2)
 
     def test_secondary_signal(self):
         empty_score = _compute_secondary_signal('')
