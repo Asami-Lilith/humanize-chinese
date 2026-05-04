@@ -507,3 +507,15 @@ python evals/run_longform_benchmark.py --n-human 60 --seed 42 --best-of-n 10
 - 用本软件给客户提供付费改写 / AI 检测服务
 
 如需商业授权，请通过 [GitHub repo](https://github.com/voidborne-d/humanize-chinese) 联系作者。
+
+## 运行测试
+
+```bash
+PYTHONHASHSEED=0 python3 -m unittest discover
+```
+
+提交前建议同时运行语法检查：
+
+```bash
+python3 -m py_compile scripts/*.py evals/*.py evals/oracles/*.py
+```
