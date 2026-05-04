@@ -1092,6 +1092,7 @@ _CILIN_BLACKLIST = {
     '在心',
     '何以',
     '什么',
+    '当真',
 }
 
 
@@ -1416,6 +1417,10 @@ def reduce_high_freq_bigrams(text, strength=0.3, scene='general'):
             # word — that's the cross-boundary signature.
             prev_ch = original_text[pos - 1:pos] if pos > 0 else ''
             if word == '解决' and prev_ch == '了' and next_ch in '策心议定断':
+                continue
+            if word == '解决' and next_ch == '方':
+                continue
+            if word == '研究' and prev_ch == '本':
                 continue
             # Compound-noun guard: '发展' acts as N1 in 'X的发展前景/态势/...'
             # — substituting to verb-form alts (推进/进展/推动) breaks the
