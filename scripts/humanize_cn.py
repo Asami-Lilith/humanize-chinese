@@ -1100,6 +1100,17 @@ _CILIN_BLACKLIST = {
     # 何如 (alt of 如何/什么/怎样) is 文言 "how about" — wrong slot for direct
     # interrogative; "何如解决" 不通.
     '何如',
+    # 主体 (alt of 核心/主脑) means "main body/subject" not "essence" —
+    # "产品决策的主体" misreads (long_blog audit).
+    '主体',
+    # 为重 (also alt of 核心) — adverbial "considered-important" doesn't fit
+    # noun slot "决策的核心"; cilin fallback after 主体 still wrong.
+    '为重',
+    # 为主 (also alt of 核心) — adverbial "principally"; same slot mismatch.
+    '为主',
+    # 主从 (also alt of 核心) — relational "principal vs subordinate";
+    # not a noun substitute for 核心 essence slot.
+    '主从',
 }
 
 
