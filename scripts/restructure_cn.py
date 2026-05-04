@@ -11,6 +11,11 @@ Chinese Deep Restructuring Module v1.0
 import re
 import random
 
+try:
+    from _text_utils import join_paragraphs, split_paragraphs
+except ImportError:
+    from scripts._text_utils import join_paragraphs, split_paragraphs
+
 
 # ═══════════════════════════════════════════════════════════════════
 #  1. 句式结构变换 — 15 种常见模板
@@ -586,8 +591,8 @@ def merge_short_sentences(text):
         合并后的文本
     """
     # 按段落切分处理，避免 .strip() 吃掉 \n\n
-    paragraphs = text.split('\n\n')
-    return '\n\n'.join(_merge_short_sentences_in_paragraph(p) for p in paragraphs)
+    paragraphs = split_paragraphs(text)
+    return join_paragraphs(_merge_short_sentences_in_paragraph(p) for p in paragraphs)
 
 
 def _merge_short_sentences_in_paragraph(text):
@@ -698,7 +703,7 @@ def reorder_mid_sentences(text):
     Returns:
         重排后的文本
     """
-    paragraphs = text.split('\n\n')
+    paragraphs = split_paragraphs(text)
     if not paragraphs:
         return text
 
@@ -728,7 +733,7 @@ def reorder_mid_sentences(text):
 
         result.append(''.join(sentences))
 
-    return '\n\n'.join(result)
+    return join_paragraphs(result)
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1015,12 +1020,12 @@ def insert_short_reactions(text, target_short_frac=None, max_per_paragraph=1, se
         scene = 'formal'
     if target_short_frac is None:
         target_short_frac = 0.22 if scene == 'academic' else 0.15
-    paragraphs = text.split('\n\n')
+    paragraphs = split_paragraphs(text)
     # Track reactions already inserted in this text. Without dedupe a sample
     # with many paragraphs can land "事出有因" 5 times (sample 16 audit) when
     # random.choice happens to cluster — reads as an obvious AI tic.
     used = set()
-    return '\n\n'.join(
+    return join_paragraphs(
         _insert_reactions_in_paragraph(p, target_short_frac, max_per_paragraph, min_sentences, scene, used)
         for p in paragraphs
     )
@@ -1129,8 +1134,8 @@ def diversify_sentence_lengths(text, target_cv=0.42, target_short_frac=0.10):
     Returns:
         text with more varied sentence lengths
     """
-    paragraphs = text.split('\n\n')
-    return '\n\n'.join(
+    paragraphs = split_paragraphs(text)
+    return join_paragraphs(
         _diversify_in_paragraph(p, target_cv, target_short_frac)
         for p in paragraphs
     )

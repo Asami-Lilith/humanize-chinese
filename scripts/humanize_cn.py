@@ -31,6 +31,11 @@ except ImportError:
     except ImportError:
         ngram_analyze = None
 
+try:
+    from _text_utils import join_paragraphs, split_paragraphs
+except ImportError:
+    from scripts._text_utils import join_paragraphs, split_paragraphs
+
 # Module-level flag: whether to use stats optimization (can be toggled by CLI)
 _USE_STATS = True
 PATTERNS_FILE = os.path.join(SCRIPT_DIR, 'patterns_cn.json')
@@ -1564,7 +1569,7 @@ def reduce_cross_para_3gram_repeat(text, max_replacements=4, scene='general',
     if not cilin:
         return text
 
-    paragraphs = text.split('\n\n')
+    paragraphs = split_paragraphs(text)
     if len(paragraphs) < 3:
         return text
 
@@ -1634,7 +1639,7 @@ def reduce_cross_para_3gram_repeat(text, max_replacements=4, scene='general',
             new_paragraphs[last_idx] = new_para
             replaced += 1
 
-    return '\n\n'.join(new_paragraphs)
+    return join_paragraphs(new_paragraphs)
 
 
 _PARA_INTERJECTION_NEUTRAL = (
@@ -1692,7 +1697,7 @@ def insert_short_interjection_paragraph(text, target_cv=0.50, style=None,
     if seed is not None:
         random.seed(seed)
 
-    paragraphs = text.split('\n\n')
+    paragraphs = split_paragraphs(text)
     if len(paragraphs) < 4:
         return text
 
@@ -1730,7 +1735,7 @@ def insert_short_interjection_paragraph(text, target_cv=0.50, style=None,
 
     new_paragraphs = list(paragraphs)
     new_paragraphs.insert(next_idx, interjection)
-    return '\n\n'.join(new_paragraphs)
+    return join_paragraphs(new_paragraphs)
 
 
 def boost_para_cv_via_merge(text, target_cv=0.40):
@@ -1745,11 +1750,11 @@ def boost_para_cv_via_merge(text, target_cv=0.40):
     medium→long threshold (sent_len_long_frac coef in the longform LR
     is -0.44, so producing more longs helps).
     """
-    paragraphs = text.split('\n\n')
+    paragraphs = split_paragraphs(text)
     if len(paragraphs) < 2:
         return text
-    return '\n\n'.join(_boost_one_para_via_merge(p, target_cv)
-                       for p in paragraphs)
+    return join_paragraphs(_boost_one_para_via_merge(p, target_cv)
+                           for p in paragraphs)
 
 
 def boost_para_sent_len_cv(text, target_cv=0.40):
@@ -1764,12 +1769,12 @@ def boost_para_sent_len_cv(text, target_cv=0.40):
     randomize_sentence_lengths Strategy B (attribution verbs, subordinate
     clause heads, bare causative continuators, paragraph-break tail).
     """
-    paragraphs = text.split('\n\n')
+    paragraphs = split_paragraphs(text)
     if len(paragraphs) < 2:
         # Single-paragraph text — signal doesn't apply.
         return text
-    return '\n\n'.join(_boost_one_paragraph_cv(p, target_cv)
-                       for p in paragraphs)
+    return join_paragraphs(_boost_one_paragraph_cv(p, target_cv)
+                           for p in paragraphs)
 
 
 def randomize_sentence_lengths(text, aggressive=False, seed=None):
@@ -2404,7 +2409,7 @@ def _para_cv(paragraphs):
 
 def vary_paragraph_rhythm(text):
     """Break uniform paragraph lengths by merging or splitting"""
-    paragraphs = text.split('\n\n')
+    paragraphs = split_paragraphs(text)
     if len(paragraphs) < 3:
         return text
 
@@ -2550,7 +2555,7 @@ def vary_paragraph_rhythm(text):
             merged = result[k] + '\n' + result[k + 1]
             result = result[:k] + [merged] + result[k + 2:]
 
-    return '\n\n'.join(result)
+    return join_paragraphs(result)
 
 def reduce_punctuation(text):
     """Reduce excessive punctuation intelligently"""
@@ -2670,7 +2675,7 @@ def add_casual_expressions(text, casualness=0.3):
 
 def shorten_paragraphs(text, max_length=150):
     """Break long paragraphs for social/chat scenes"""
-    paragraphs = text.split('\n\n')
+    paragraphs = split_paragraphs(text)
     result = []
     
     for para in paragraphs:
@@ -2694,7 +2699,7 @@ def shorten_paragraphs(text, max_length=150):
         else:
             result.append(para)
     
-    return '\n\n'.join(result)
+    return join_paragraphs(result)
 
 def diversify_vocabulary(text):
     """Reduce word repetition by using synonyms"""

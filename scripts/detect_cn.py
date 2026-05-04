@@ -22,6 +22,11 @@ except ImportError:
     except ImportError:
         ngram_analyze = None
 
+try:
+    from _text_utils import split_paragraphs
+except ImportError:
+    from scripts._text_utils import split_paragraphs
+
 # Load patterns from JSON config
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PATTERNS_FILE = os.path.join(SCRIPT_DIR, 'patterns_cn.json')
@@ -273,7 +278,7 @@ def detect_patterns(text):
         })
     
     # ── Style: Uniform paragraph lengths ──
-    paragraphs = [p.strip() for p in text.split('\n\n') if p.strip() and len(p.strip()) > 20]
+    paragraphs = [p.strip() for p in split_paragraphs(text) if p.strip() and len(p.strip()) > 20]
     if len(paragraphs) >= 3:
         lengths = [len(p) for p in paragraphs]
         avg_len = sum(lengths) / len(lengths)
