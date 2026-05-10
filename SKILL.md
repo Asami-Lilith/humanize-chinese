@@ -1,16 +1,13 @@
 ---
 name: humanize-chinese
 description: >
-  Detect and humanize AI-generated Chinese text. 20+ rule detection categories plus statistical
-  features (sentence-length CV, short-sentence fraction, comma density, perplexity, GLTR, DivEye)
-  plus scene-aware LR fusion (rule × 0.2 + LR × 0.8) trained on three scenes: general / academic /
-  longform 长文本 (≥1500 字)。Unified CLI: ./humanize {detect,rewrite,academic,style,compare}.
+  Detect and humanize AI-generated Chinese text. 20+ rule detection categories + statistical
+  features + scene-aware LR fusion (rule × 0.2 + LR × 0.8) trained on three scenes: general /
+  academic / longform 长文本 (≥1500 字)。Unified CLI: ./humanize {detect,rewrite,academic,style,compare}.
   8 style transforms (casual/zhihu/xiaohongshu/wechat/academic/literary/weibo/novel)。
-  Multi-paragraph rewriting (paragraph length CV、跨段 trigram 重复) plus best-of-N humanize
-  (默认 N=10 取最低 LR)。165 replacement patterns + CiLin 同义词词林 38873 with collision blacklist。
+  Multi-paragraph rewriting + best-of-N humanize。165 replacement patterns + CiLin 同义词词林 38873。
   Academic paper AIGC reduction for CNKI/VIP/Wanfang (知网/维普/万方 AIGC 检测降重)。
-  Pure Python, no dependencies, offline。v5.0.0 — HC3 fused 准确率 95%、学术 hero 100→35 (-65)、
-  工作汇报 96→13 (-83)、长篇博客 96→41 (-55)。
+  Pure Python, no dependencies, offline。v5.0.0 — HC3 fused 95%, 学术 -65 / 工作汇报 -83 / 长篇博客 -55。
   Use when user says: "去AI味", "降AIGC", "人性化文本", "humanize chinese", "AI检测", "AIGC降重",
   "去除AI痕迹", "文本改写", "论文降重", "知网检测", "维普检测", "AI写作检测", "让文字更自然",
   "detect AI text", "humanize text", "reduce AIGC score", "make text human-like",
