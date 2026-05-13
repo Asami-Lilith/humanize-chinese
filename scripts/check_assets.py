@@ -16,32 +16,32 @@ ROOT = os.path.dirname(SCRIPT_DIR)
 
 
 CORE_ASSETS = (
-    ('scripts/ngram_freq_cn.json', 50_000, 'primary char 3-gram; detect/rewrite baseline perplexity'),
-    ('scripts/patterns_cn.json', 10_000, 'rule patterns and rewrite replacements'),
-    ('scripts/lr_coef_cn.json', 500, 'general LR scorer'),
-    ('scripts/lr_coef_academic.json', 500, 'academic LR scorer'),
-    ('scripts/lr_coef_longform.json', 500, 'longform LR scorer'),
-    ('scripts/ngram_freq_cn_human_holdout.json', 1_000, 'HC3 human holdout split metadata'),
+    ('scripts/data/ngram_freq_cn.json', 50_000, 'primary char 3-gram; detect/rewrite baseline perplexity'),
+    ('scripts/data/patterns_cn.json', 10_000, 'rule patterns and rewrite replacements'),
+    ('scripts/data/lr_coef_cn.json', 500, 'general LR scorer'),
+    ('scripts/data/lr_coef_academic.json', 500, 'academic LR scorer'),
+    ('scripts/data/lr_coef_longform.json', 500, 'longform LR scorer'),
+    ('scripts/data/ngram_freq_cn_human_holdout.json', 1_000, 'HC3 human holdout split metadata'),
 )
 
 OPTIONAL_ASSETS = (
     (
-        'scripts/ngram_freq_cn_human.json',
+        'scripts/data/ngram_freq_cn_human.json',
         5_000_000,
         'enables bino_lp_diff and the binoculars component of best-of-n secondary signal',
-        'python scripts/train_ngram_human.py',
+        'python scripts/train/train_ngram_human.py',
     ),
     (
-        'scripts/ngram_freq_cn_wiki.json',
+        'scripts/data/ngram_freq_cn_wiki.json',
         2_000_000,
         'enables wiki_vs_human/wiki_vs_primary LR features; also required by news divergence',
-        'python scripts/train_ngram_wiki.py',
+        'python scripts/train/train_ngram_wiki.py',
     ),
     (
-        'scripts/ngram_freq_cn_news.json',
+        'scripts/data/ngram_freq_cn_news.json',
         2_000_000,
         'enables news_vs_human LR feature',
-        'python scripts/train_ngram_news.py',
+        'python scripts/train/train_ngram_news.py',
     ),
 )
 

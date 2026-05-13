@@ -16,7 +16,7 @@ import re
 from math import log2, exp
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FREQ_FILE = os.path.join(SCRIPT_DIR, 'ngram_freq_cn.json')
+FREQ_FILE = os.path.join(SCRIPT_DIR, 'data/ngram_freq_cn.json')
 
 # ─── Frequency Table Loading ───
 
@@ -471,10 +471,10 @@ def compute_curvature(text, n_positions=50, k_alts=10, seed=42):
 #     → ratio diverges from 1.
 #
 # Secondary ngram file: scripts/ngram_freq_cn_human.json (20MB, .gitignored,
-# regenerate via `python scripts/train_ngram_human.py`)
+# regenerate via `python scripts/train/train_ngram_human.py`)
 
 _HUMAN_FREQ_CACHE = None
-_HUMAN_FREQ_FILE = os.path.join(SCRIPT_DIR, 'ngram_freq_cn_human.json')
+_HUMAN_FREQ_FILE = os.path.join(SCRIPT_DIR, 'data/ngram_freq_cn_human.json')
 
 
 def _load_human_freq():
@@ -495,7 +495,7 @@ def _load_human_freq():
 
 
 _WIKI_FREQ_CACHE = None
-_WIKI_FREQ_FILE = os.path.join(SCRIPT_DIR, 'ngram_freq_cn_wiki.json')
+_WIKI_FREQ_FILE = os.path.join(SCRIPT_DIR, 'data/ngram_freq_cn_wiki.json')
 
 
 def _load_wiki_freq():
@@ -516,7 +516,7 @@ def _load_wiki_freq():
 
 
 _NEWS_FREQ_CACHE = None
-_NEWS_FREQ_FILE = os.path.join(SCRIPT_DIR, 'ngram_freq_cn_news.json')
+_NEWS_FREQ_FILE = os.path.join(SCRIPT_DIR, 'data/ngram_freq_cn_news.json')
 
 
 def _load_news_freq():
@@ -1414,9 +1414,9 @@ LR_FEATURE_NAMES = (
 
 
 _LR_COEF_CACHE = {}
-_LR_COEF_FILE = os.path.join(SCRIPT_DIR, 'lr_coef_cn.json')
-_LR_COEF_ACADEMIC_FILE = os.path.join(SCRIPT_DIR, 'lr_coef_academic.json')
-_LR_COEF_LONGFORM_FILE = os.path.join(SCRIPT_DIR, 'lr_coef_longform.json')
+_LR_COEF_FILE = os.path.join(SCRIPT_DIR, 'data/lr_coef_cn.json')
+_LR_COEF_ACADEMIC_FILE = os.path.join(SCRIPT_DIR, 'data/lr_coef_academic.json')
+_LR_COEF_LONGFORM_FILE = os.path.join(SCRIPT_DIR, 'data/lr_coef_longform.json')
 
 
 def _load_lr_coef(path=None, scene='general'):
