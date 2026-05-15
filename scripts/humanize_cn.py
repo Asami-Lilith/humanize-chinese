@@ -3344,7 +3344,8 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
         for i in range(best_of_n):
             s = base_seed + i
             out = humanize(text, scene=scene, aggressive=aggressive,
-                           seed=s, best_of_n=None, style=style)
+                           seed=s, best_of_n=None, style=style,
+                           protect=protect)
             lr_scene = _pick_lr_scene(out)
             if lr_scene == 'longform':
                 out = _apply_longform_mutation_profile(
@@ -3633,7 +3634,7 @@ def main():
     parser.add_argument('--cilin', action='store_true',
                        help='用 CiLin 同义词词林扩展候选（~40K 词 vs 手工 200 词）')
     parser.add_argument('--protect', action='store_true',
-                       help='启用领域术语保护（内置约8500条高频术语，避免替换专业词汇）')
+                       help='启用领域术语保护（内置约6.8万条专业术语，避免替换专业词汇）')
     parser.add_argument('--build-dict-cache', metavar='DICT_TXT_DIR',
                        help='生成完整 DomainWordsDict JSON 缓存（需提供 .txt 文件目录）')
 
