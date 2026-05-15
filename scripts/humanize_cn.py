@@ -23,6 +23,11 @@ _USE_NOISE = True
 # via --cilin CLI flag.
 _USE_CILIN = False
 
+# Module-level flags for domain-term protection.
+# Populated by humanize() when --protect is used.
+_USE_PROTECT_FLAG = False
+_PROTECTION_SET = set()
+
 _ACADEMIC_LR_MARKERS = (
     '本研究',
     '研究表明',
@@ -1412,6 +1417,18 @@ def reduce_high_freq_bigrams(text, strength=0.3, scene='general'):
         # Randomly select which occurrences to replace (deterministic via current seed)
         to_replace = set(random.sample(range(len(occurrences)), n_replace_occ))
 
+        # Protection: exclude occurrences inside domain terms
+        if _USE_PROTECT_FLAG and _PROTECTION_SET:
+            _blocked = set()
+            for t in _PROTECTION_SET:
+                for m in re.finditer(re.escape(t), text):
+                    for p in range(m.start(), m.end()):
+                        _blocked.add(p)
+            to_replace = {k for k in to_replace
+                          if occurrences[k] not in _blocked}
+            if not to_replace:
+                continue
+
         # Pick alternative candidates for variety when multiple occurrences replaced
         # (avoid monotone repetition of single replacement)
         alt_candidates = [c for c, _ in ranked if c != primary] or [primary]
@@ -1524,6 +1541,15 @@ def _simple_synonym_pass(text, strength=0.3, scene='general'):
     for word, pos in found[:n_replace]:
         if any(p in replaced_positions for p in range(pos, pos + len(word))):
             continue
+        # Protection: skip if word falls inside domain term
+        if _USE_PROTECT_FLAG and _PROTECTION_SET:
+            _blocked = set()
+            for t in _PROTECTION_SET:
+                for m in re.finditer(re.escape(t), text):
+                    for p in range(m.start(), m.end()):
+                        _blocked.add(p)
+            if pos in _blocked:
+                continue
         candidates = _filter_candidates_for_scene(word, WORD_SYNONYMS[word], scene)
         if not candidates:
             continue
@@ -3281,7 +3307,7 @@ def _format_best_of_debug(seed, scene_picked, lr_scores, secondary, rank_score,
 
 def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAULT_BEST_OF_N,
              style=None, debug_best_of_n=False, score_mode='lr',
-             secondary_weight=DEFAULT_SECONDARY_WEIGHT):
+             secondary_weight=DEFAULT_SECONDARY_WEIGHT, protect=False):
     """Apply all humanization transformations in order.
 
     Graduated intensity based on source AI-score (pre-detect):
@@ -3374,6 +3400,23 @@ def humanize(text, scene='general', aggressive=False, seed=None, best_of_n=DEFAU
         tier = 'moderate'
     else:
         tier = 'conservative'
+
+    # Protection: build term set for guard injection.
+    # Guards recompute blocked positions from current text at each check
+    # because prior passes (restructure, merge, split) shift character positions.
+    global _USE_PROTECT_FLAG, _PROTECTION_SET
+    _PROTECTION_SET = set()
+    _USE_PROTECT_FLAG = False
+    if protect:
+        try:
+            from _humanize_protect import get_layer as _get_protect_layer
+        except ImportError:
+            _get_protect_layer = None
+        if _get_protect_layer:
+            _layer = _get_protect_layer()
+            if _layer.is_ready():
+                _PROTECTION_SET = _layer.extract_protected_terms(text)
+                _USE_PROTECT_FLAG = bool(_PROTECTION_SET)
 
     # Pass 1: Structure cleanup — always run (safe, targeted)
     text = remove_three_part_structure(text)
@@ -3589,8 +3632,23 @@ def main():
                        help='快速模式（= --no-stats --no-noise），只跑短语替换 + 结构清理')
     parser.add_argument('--cilin', action='store_true',
                        help='用 CiLin 同义词词林扩展候选（~40K 词 vs 手工 200 词）')
+    parser.add_argument('--protect', action='store_true',
+                       help='启用领域术语保护（内置约8500条高频术语，避免替换专业词汇）')
+    parser.add_argument('--build-dict-cache', metavar='DICT_TXT_DIR',
+                       help='生成完整 DomainWordsDict JSON 缓存（需提供 .txt 文件目录）')
 
     args = parser.parse_args()
+
+    # Build dict cache mode: convert then exit
+    if args.build_dict_cache:
+        try:
+            from _domain_dict_convert import convert
+        except ImportError:
+            import sys as _sys
+            _sys.path.insert(0, SCRIPT_DIR)
+            from _domain_dict_convert import convert
+        convert(args.build_dict_cache)
+        sys.exit(0)
 
     # Toggle stats optimization
     global _USE_STATS
@@ -3624,7 +3682,8 @@ def main():
                        best_of_n=args.best_of_n, style=args.style,
                        debug_best_of_n=args.debug_best_of_n,
                        score_mode=args.score_mode,
-                       secondary_weight=args.secondary_weight)
+                       secondary_weight=args.secondary_weight,
+                       protect=args.protect)
     
     # Apply style if specified
     if args.style:

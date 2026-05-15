@@ -20,3 +20,7 @@ evals/compression_human_seed.txt
 
 # scripts/lr_coef_academic.json is checked in (2KB). To retrain on a
 # different corpus: python scripts/train_lr_academic.py
+
+# Full DomainWordsDict JSON cache (~30MB, generated via --build-dict-cache).
+# Built-in mini dictionary (~8400 terms) is embedded in _humanize_protect.py.
+scripts/data/DomainWordsDict/
