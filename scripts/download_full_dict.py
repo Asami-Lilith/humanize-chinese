@@ -36,7 +36,7 @@ DATA_DIR = os.path.join(SCRIPT_DIR, 'data', 'DomainWordsDict')
 # then set this to the direct download URL of that zip asset.
 _DEFAULT_URL = (
     'https://github.com/Asami-Lilith/humanize-chinese/releases/download/'
-    'dict-v1/DomainWordsDict-sorted.zip'
+    'Resources/DomainWordsDict.zip'
 )
 
 
