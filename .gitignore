@@ -22,5 +22,5 @@ evals/compression_human_seed.txt
 # different corpus: python scripts/train_lr_academic.py
 
 # Full DomainWordsDict JSON cache (~30MB, generated via --build-dict-cache).
-# Built-in mini dictionary (~8400 terms) is embedded in _humanize_protect.py.
+# Mini dictionary (scripts/data/mini_dict.json, ~1MB) is checked in.
 scripts/data/DomainWordsDict/
