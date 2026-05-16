@@ -3636,7 +3636,8 @@ def main():
     parser.add_argument('--protect', action='store_true',
                        help='启用领域术语保护（内置约6.8万条专业术语，避免替换专业词汇）')
     parser.add_argument('--build-dict-cache', metavar='DICT_TXT_DIR',
-                       help='生成完整 DomainWordsDict JSON 缓存（需提供 .txt 文件目录）')
+                       help='从 DomainWordsDict .txt 源文件生成排序好的 JSON 缓存（推荐用'
+                            ' download_full_dict.py 一键部署）')
 
     args = parser.parse_args()
 
