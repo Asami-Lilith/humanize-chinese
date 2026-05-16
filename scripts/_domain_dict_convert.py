@@ -28,7 +28,6 @@ DATA_DIR = os.path.join(SCRIPT_DIR, 'data', 'DomainWordsDict')
 
 MIN_TERM_LEN = 2
 MAX_TERM_LEN = 10
-MIN_WEIGHT_FOR_INDEX = 3
 _ASCII_RE = re.compile(r'^[a-zA-Z0-9\s\.\,\-\'\"\(\)\&\/\#]+$')
 
 
@@ -148,8 +147,6 @@ def convert(src_dir):
                     try:
                         weight = int(parts[1].strip())
                     except ValueError:
-                        continue
-                    if weight < MIN_WEIGHT_FOR_INDEX:
                         continue
                     terms.append((term, weight))
         except Exception as e:
